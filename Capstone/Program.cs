@@ -1,21 +1,49 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Identity.Web;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using FluentValidation;
+
+using Capstone.ExceptionHandling;
 using Capstone.Data;
+using Capstone.Models;
+using Capstone.Features;
+using Capstone.Features.ApplicantTracking;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CapstoneContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CapstoneContext") ?? throw new InvalidOperationException("Connection string 'CapstoneContext' not found.")));
+    options.UseSqlServer(
+		builder.Configuration.GetConnectionString("CapstoneContext") 
+		?? throw new InvalidOperationException("Connection string 'CapstoneContext' not found.")
+	)
+);
 
-// Add services to the container.
+// === Add Services to the container.
+
+// ---- AUTH ----
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //	.AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
-builder.Services.AddControllers();
+// ---- General ----
+builder.Services.AddControllers(options => 
+	{
+		options.Filters.Add<HttpResponseExceptionFilter>();
+	});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// ---- App Services ----
+builder.Services.AddScoped<IApplicantTrackingService, ApplicantTrackingService>();
+
+
+// ---- Validation Services ----
+builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantTrackingValidator>();
+
+// === End Services Config.
 
 var app = builder.Build();
 
@@ -28,7 +56,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
+//app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
