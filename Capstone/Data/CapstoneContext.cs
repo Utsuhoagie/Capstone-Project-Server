@@ -14,6 +14,7 @@ namespace Capstone.Data
         {
         }
 
-        public DbSet<Capstone.Models.Applicant> Applicant { get; set; } = default!;
+		public DbSet<Person> People { get; set; } = default!;
+        public DbSet<Applicant> Applicant { get; set; } = default!;
     }
 }

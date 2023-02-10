@@ -1,7 +1,5 @@
 ﻿namespace Capstone.Models
 {
-	public static List<string> GenderOptions = new List<string> { "male", "female", "other" };
-
 	public class Person
 	{
 		public int Id { get; set; }
