@@ -53,6 +53,10 @@ namespace Capstone.Features.ApplicantTracking
 				.EmailAddress()
 				.When(a => a.Email != string.Empty);
 
+			RuleFor(a => a.ExperienceYears)
+				.NotEmpty()
+				.GreaterThanOrEqualTo(0);
+
 			RuleFor(a => a.AppliedPosition)
 				.NotEmpty();
 
