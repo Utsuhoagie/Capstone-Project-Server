@@ -73,6 +73,14 @@ namespace Capstone.Features.ApplicantTracking
 		{
 			await _validator.ValidateAndThrowAsync(applicantDto);
 
+			//var duplicateApplicant = await _context.Applicant
+			//	.SingleAsync(a => a.NationalId == applicantDto.NationalId);
+
+			//if (duplicateApplicant != null)
+			//{
+			//	return false;
+			//}
+
 			var applicant = new Applicant
 			{
 				NationalId = applicantDto.NationalId,
@@ -101,9 +109,10 @@ namespace Capstone.Features.ApplicantTracking
 			return true;
 		}
 
-		public async Task<bool> DeleteApplicantAsync(int id)
+		public async Task<bool> DeleteApplicantAsync(string NationalId)
 		{
-			var applicant = await _context.Applicant.FindAsync(id);
+			var applicant = await _context.Applicant
+				.SingleAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
 			{

@@ -31,7 +31,17 @@ builder.Services.AddDbContext<CapstoneContext>(options =>
 builder.Services.AddControllers(options => 
 	{
 		options.Filters.Add<HttpResponseExceptionFilter>();
+	})
+	.AddJsonOptions(options => { 
+		options.JsonSerializerOptions.PropertyNamingPolicy = null;
 	});
+builder.Services.AddCors(p => 
+	p.AddPolicy("Capstone", b => 
+		b.WithOrigins("http://localhost:3000")
+		 .AllowAnyHeader()
+		 .AllowAnyMethod()
+	)
+);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -55,6 +65,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("Capstone");
 
 //app.UseAuthentication();
 app.UseAuthorization();

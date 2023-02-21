@@ -1,4 +1,5 @@
-﻿using Capstone.ExceptionHandling;
+﻿using Capstone.Data;
+using Capstone.ExceptionHandling;
 using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
@@ -7,14 +8,23 @@ namespace Capstone.Features.ApplicantTracking
 {
 	public class ApplicantTrackingValidator: AbstractValidator<ApplicantDto>
 	{
-		private readonly int[] NationalIdLengths = new [] { 9, 12 };
-		private readonly string[] GenderOptions = new [] { "male", "female", "other" };
+		private readonly CapstoneContext _context;
 
-		public ApplicantTrackingValidator() {
+		public ApplicantTrackingValidator(CapstoneContext context) {
+			_context = context;
+
 			RuleFor(a => a.NationalId)
 				.NotEmpty()
-				.Must(n => NationalIdLengths.Contains(n.Length))
-				.WithMessage("Số CMND/CCCD chỉ có thể có 9 hoặc 12 số.");
+				.Must(n => new[] {9, 12}.Contains(n.Length))
+				.WithMessage("Số CMND/CCCD chỉ có thể có 9 hoặc 12 số.")
+				.Must(n =>
+				{
+					var duplicateApplicant = _context.Applicant
+						.FirstOrDefault(a => a.NationalId == n);
+
+					return duplicateApplicant == null;
+				})
+				.WithMessage("Số CMND/CCCD không được trùng.");
 
 			RuleFor(a => a.FullName)
 				.NotEmpty()
@@ -22,7 +32,7 @@ namespace Capstone.Features.ApplicantTracking
 
 			RuleFor(a => a.Gender)
 				.NotEmpty()
-				.Must(g => GenderOptions.Contains(g));
+				.Must(g => new[] { "male", "female", "other" }.Contains(g));
 
 			RuleFor(a => a.BirthDate)
 				.InclusiveBetween(
@@ -31,6 +41,7 @@ namespace Capstone.Features.ApplicantTracking
 				);
 
 			RuleFor(a => a.Address)
+				.NotEmpty()
 				.MaximumLength(200);
 
 			RuleFor(a => a.Phone)
@@ -39,7 +50,8 @@ namespace Capstone.Features.ApplicantTracking
 				.MaximumLength(11);
 
 			RuleFor(a => a.Email)
-				.EmailAddress();
+				.EmailAddress()
+				.When(a => a.Email != string.Empty);
 
 			RuleFor(a => a.AppliedPosition)
 				.NotEmpty();

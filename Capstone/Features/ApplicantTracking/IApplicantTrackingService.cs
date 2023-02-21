@@ -13,6 +13,6 @@ namespace Capstone.Features.ApplicantTracking
 
 		Task<bool> DeleteApplicantsAsync();
 
-		Task<bool> DeleteApplicantAsync(int id);
+		Task<bool> DeleteApplicantAsync(string NationalId);
 	}
 }

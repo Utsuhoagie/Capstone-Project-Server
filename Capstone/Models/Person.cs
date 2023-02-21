@@ -10,13 +10,13 @@
 
 		public string Gender { get; set; } = string.Empty;
 
-		public DateTime BirthDate { get; set; }
+		public DateTime? BirthDate { get; set; }
 
 		public string Address { get; set; } = string.Empty; 
 
 		public string Phone { get; set; } = string.Empty;
 
-		public string Email { get; set; } = string.Empty;
+		public string? Email { get; set; }
 
 		public int ExperienceYears { get; set; }
 	}
@@ -29,13 +29,13 @@
 
 		public string Gender { get; set; } = string.Empty;
 
-		public DateTime BirthDate { get; set; }
+		public DateTime? BirthDate { get; set; }
 
 		public string Address { get; set; } = string.Empty;
 
 		public string Phone { get; set; } = string.Empty;
 
-		public string Email { get; set; } = string.Empty;
+		public string? Email { get; set; }
 
 		public int ExperienceYears { get; set; }
 	}

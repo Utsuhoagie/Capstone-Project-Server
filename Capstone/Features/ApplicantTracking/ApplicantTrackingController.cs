@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
 using Capstone.Models;
 using Capstone.Features.ApplicantTracking;
+using Microsoft.AspNetCore.Cors;
 
 namespace Capstone.Features.ApplicantTracking
 {
@@ -47,8 +48,8 @@ namespace Capstone.Features.ApplicantTracking
 
         // POST: api/ApplicantTracking
         [HttpPost]
-		//public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
-		public async Task<ActionResult<object>> PostApplicant(ApplicantDto applicantDto)
+		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
+		//public async Task<ActionResult<object>> PostApplicant(ApplicantDto applicantDto)
 		{
 			await _service.AddApplicantAsync(applicantDto);
 
@@ -90,19 +91,26 @@ namespace Capstone.Features.ApplicantTracking
 				}*/
 
 		// DELETE: api/ApplicantTracking
-		[HttpDelete]
-		public async Task<IActionResult> DeleteApplicants()
-		{
-			await _service.DeleteApplicantsAsync();
+		//[HttpDelete]
+		//public async Task<IActionResult> DeleteApplicants()
+		//{
+		//	await _service.DeleteApplicantsAsync();
 
-			return NoContent();
-		}
+		//	return NoContent();
+		//}
 
-        // DELETE: api/ApplicantTracking/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplicant(int id)
+        // DELETE: api/ApplicantTracking?NationalId={string}
+        [HttpDelete]
+        public async Task<IActionResult> DeleteApplicant([FromQuery] string? NationalId)
         {
-			var result = await _service.DeleteApplicantAsync(id);
+			if (NationalId == null)
+			{
+				await _service.DeleteApplicantsAsync();
+
+				return NoContent();
+			}
+
+			var result = await _service.DeleteApplicantAsync(NationalId);
             
 			if (result == false)
             {
