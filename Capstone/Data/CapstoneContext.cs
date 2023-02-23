@@ -16,5 +16,16 @@ namespace Capstone.Data
 
 		public DbSet<Person> People { get; set; } = default!;
         public DbSet<Applicant> Applicant { get; set; } = default!;
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<Person>()
+				.Property(p => p.BirthDate)
+				.HasColumnType("datetimeoffset");
+
+			modelBuilder.Entity<Applicant>()
+				.Property(a => a.AppliedDate)
+				.HasColumnType("datetimeoffset");
+		}
     }
 }

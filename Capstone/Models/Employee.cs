@@ -6,11 +6,11 @@
 
 		public int Salary { get; set; }
 
-		public DateTime EmployedDate { get; set; }
+		public DateTimeOffset EmployedDate { get; set; }
 
-		public DateTime StartTime { get; set; }
+		public DateTimeOffset StartTime { get; set; }
 
-		public DateTime EndTime { get; set; }
+		public DateTimeOffset EndTime { get; set; }
 	}
 
 	public class EmployeeDto : PersonDto
@@ -19,10 +19,10 @@
 
 		public int Salary { get; set; }
 
-		public DateTime EmployedDate { get; set; }
+		public DateTimeOffset EmployedDate { get; set; }
 
-		public DateTime StartTime { get; set; }
+		public DateTimeOffset StartTime { get; set; }
 
-		public DateTime EndTime { get; set; }
+		public DateTimeOffset EndTime { get; set; }
 	}
 }

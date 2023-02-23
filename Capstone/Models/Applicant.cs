@@ -6,7 +6,7 @@ namespace Capstone.Models
 	{
 		public string AppliedPosition { get; set; } = string.Empty;
 
-		public DateTime AppliedDate { get; set; }
+		public DateTimeOffset AppliedDate { get; set; }
 
 		public int AskingSalary { get; set; }
 	}
@@ -15,7 +15,7 @@ namespace Capstone.Models
 	{
 		public string AppliedPosition { get; set; } = string.Empty;
 
-		public DateTime AppliedDate { get; set; }
+		public DateTimeOffset AppliedDate { get; set; }
 
 		public int AskingSalary { get; set; }
 	}
