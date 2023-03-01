@@ -65,12 +65,12 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("People");
+                    b.ToTable("People", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Applicant", b =>
+            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
                 {
                     b.HasBaseType("Capstone.Models.Person");
 
@@ -84,7 +84,7 @@ namespace Capstone.Migrations
                     b.Property<int>("AskingSalary")
                         .HasColumnType("int");
 
-                    b.HasDiscriminator().HasValue("Applicant");
+                    b.HasDiscriminator().HasValue("ApplicantModule");
                 });
 #pragma warning restore 612, 618
         }

@@ -24,7 +24,7 @@ namespace Capstone.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Capstone.Models.Applicant", b =>
+            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -73,7 +73,7 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Applicant");
+                    b.ToTable("ApplicantModule");
                 });
 #pragma warning restore 612, 618
         }

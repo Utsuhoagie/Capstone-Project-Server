@@ -4,7 +4,7 @@ using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
 
-namespace Capstone.Features.ApplicantTracking
+namespace Capstone.Features.ApplicantModule
 {
 	public class ApplicantValidator: AbstractValidator<ApplicantDto>
 	{

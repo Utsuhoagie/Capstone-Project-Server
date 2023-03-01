@@ -10,7 +10,7 @@ using Capstone.ExceptionHandling;
 using Capstone.Data;
 using Capstone.Models;
 using Capstone.Features;
-using Capstone.Features.ApplicantTracking;
+using Capstone.Features.ApplicantModule;
 
 
 var builder = WebApplication.CreateBuilder(args);

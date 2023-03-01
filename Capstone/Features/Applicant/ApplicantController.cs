@@ -7,11 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
 using Capstone.Models;
-using Capstone.Features.ApplicantTracking;
 using Microsoft.AspNetCore.Cors;
 using Capstone.Pagination;
 
-namespace Capstone.Features.ApplicantTracking
+namespace Capstone.Features.ApplicantModule
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -21,7 +20,7 @@ namespace Capstone.Features.ApplicantTracking
 
         public ApplicantController(IApplicantService service)
         {
-            _service = service;
+			_service = service;
         }
 
 		// GET:

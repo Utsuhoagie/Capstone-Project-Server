@@ -2,7 +2,7 @@
 using Capstone.Pagination;
 using FluentValidation.Results;
 
-namespace Capstone.Features.ApplicantTracking
+namespace Capstone.Features.ApplicantModule
 {
     public interface IApplicantService
     {

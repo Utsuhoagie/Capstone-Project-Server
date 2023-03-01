@@ -1,4 +1,4 @@
-﻿namespace Capstone.Features.ApplicantTracking
+﻿namespace Capstone.Features.ApplicantModule
 {
 	public class ApplicantFilterParams
 	{

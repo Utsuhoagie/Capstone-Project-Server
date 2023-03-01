@@ -1,6 +1,5 @@
 ﻿using Capstone.Data;
 using Capstone.ExceptionHandling;
-using Capstone.Features.ApplicantTracking;
 using Capstone.Models;
 using Capstone.Pagination;
 using FluentValidation;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
-namespace Capstone.Features.ApplicantTracking
+namespace Capstone.Features.ApplicantModule
 {
     public class ApplicantService : IApplicantService
     {

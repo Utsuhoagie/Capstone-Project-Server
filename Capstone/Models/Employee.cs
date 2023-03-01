@@ -8,9 +8,9 @@
 
 		public DateTimeOffset EmployedDate { get; set; }
 
-		public DateTimeOffset StartTime { get; set; }
+		public int StartHour { get; set; }
 
-		public DateTimeOffset EndTime { get; set; }
+		public int EndHour { get; set; }
 	}
 
 	public class EmployeeDto : PersonDto
@@ -21,8 +21,8 @@
 
 		public DateTimeOffset EmployedDate { get; set; }
 
-		public DateTimeOffset StartTime { get; set; }
+		public int StartHour { get; set; }
 
-		public DateTimeOffset EndTime { get; set; }
+		public int EndHour { get; set; }
 	}
 }
