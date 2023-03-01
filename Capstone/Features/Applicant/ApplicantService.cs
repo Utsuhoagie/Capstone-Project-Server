@@ -11,12 +11,12 @@ using System.Net;
 
 namespace Capstone.Features.ApplicantTracking
 {
-    public class ApplicantTrackingService : IApplicantTrackingService
+    public class ApplicantService : IApplicantService
     {
         private readonly CapstoneContext _context;
 		private readonly IValidator<ApplicantDto> _validator;
 
-		public ApplicantTrackingService(
+		public ApplicantService(
 			CapstoneContext capstoneContext, 
 			IValidator<ApplicantDto> validator)
         {
@@ -50,7 +50,7 @@ namespace Capstone.Features.ApplicantTracking
 
         public async Task<PagedResult<ApplicantDto>> GetApplicantsAsync(
 			PagingParams pagingParams,
-			ApplicantTrackingFilterParams filterParams)
+			ApplicantFilterParams filterParams)
         {
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;

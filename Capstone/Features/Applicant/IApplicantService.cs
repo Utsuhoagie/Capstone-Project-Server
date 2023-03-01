@@ -4,11 +4,11 @@ using FluentValidation.Results;
 
 namespace Capstone.Features.ApplicantTracking
 {
-    public interface IApplicantTrackingService
+    public interface IApplicantService
     {
 		Task<PagedResult<ApplicantDto>> GetAllApplicantsAsync();
 
-        Task<PagedResult<ApplicantDto>> GetApplicantsAsync(PagingParams pagingParams, ApplicantTrackingFilterParams filterParams);
+        Task<PagedResult<ApplicantDto>> GetApplicantsAsync(PagingParams pagingParams, ApplicantFilterParams filterParams);
 
 		Task<ApplicantDto?> GetApplicantAsync(string NationalId);
 

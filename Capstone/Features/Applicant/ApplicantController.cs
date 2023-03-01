@@ -15,11 +15,11 @@ namespace Capstone.Features.ApplicantTracking
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ApplicantTrackingController : ControllerBase
+    public class ApplicantController : ControllerBase
     {
-        private readonly IApplicantTrackingService _service;
+        private readonly IApplicantService _service;
 
-        public ApplicantTrackingController(IApplicantTrackingService service)
+        public ApplicantController(IApplicantService service)
         {
             _service = service;
         }
@@ -45,7 +45,7 @@ namespace Capstone.Features.ApplicantTracking
 			}
 
 			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
-			ApplicantTrackingFilterParams filterParams = new ApplicantTrackingFilterParams
+			ApplicantFilterParams filterParams = new ApplicantFilterParams
 			{
 				SubName = SubName,
 				Gender = Gender,

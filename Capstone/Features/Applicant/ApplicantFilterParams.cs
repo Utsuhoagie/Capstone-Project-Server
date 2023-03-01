@@ -1,6 +1,6 @@
 ﻿namespace Capstone.Features.ApplicantTracking
 {
-	public class ApplicantTrackingFilterParams
+	public class ApplicantFilterParams
 	{
 		public string? SubName { get; set; }
 		public string? Gender { get; set; }

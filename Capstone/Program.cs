@@ -46,12 +46,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ---- App Services ----
-builder.Services.AddScoped<IApplicantTrackingService, ApplicantTrackingService>();
+builder.Services.AddScoped<IApplicantService, ApplicantService>();
 
 
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantTrackingValidator>();
+builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
 
 // === End Services Config.
 

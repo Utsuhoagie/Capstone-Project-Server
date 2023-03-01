@@ -6,11 +6,11 @@ using FluentValidation.Results;
 
 namespace Capstone.Features.ApplicantTracking
 {
-	public class ApplicantTrackingValidator: AbstractValidator<ApplicantDto>
+	public class ApplicantValidator: AbstractValidator<ApplicantDto>
 	{
 		private readonly CapstoneContext _context;
 
-		public ApplicantTrackingValidator(CapstoneContext context) {
+		public ApplicantValidator(CapstoneContext context) {
 			_context = context;
 
 			RuleFor(a => a.NationalId)
