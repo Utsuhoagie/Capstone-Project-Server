@@ -54,7 +54,7 @@ namespace Capstone.Features.ApplicantTracking
 				.When(a => a.Email != string.Empty);
 
 			RuleFor(a => a.ExperienceYears)
-				.NotEmpty()
+				.NotNull()
 				.GreaterThanOrEqualTo(0);
 
 			RuleFor(a => a.AppliedPosition)
@@ -65,7 +65,7 @@ namespace Capstone.Features.ApplicantTracking
 				.LessThanOrEqualTo(DateTime.Now);
 
 			RuleFor(a => a.AskingSalary)
-				.NotEmpty()
+				.NotNull()
 				.GreaterThanOrEqualTo(1_000_000);
 		}
 

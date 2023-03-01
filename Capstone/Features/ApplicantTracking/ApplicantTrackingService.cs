@@ -2,6 +2,7 @@
 using Capstone.ExceptionHandling;
 using Capstone.Features.ApplicantTracking;
 using Capstone.Models;
+using Capstone.Pagination;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -15,7 +16,7 @@ namespace Capstone.Features.ApplicantTracking
         private readonly CapstoneContext _context;
 		private readonly IValidator<ApplicantDto> _validator;
 
-        public ApplicantTrackingService(
+		public ApplicantTrackingService(
 			CapstoneContext capstoneContext, 
 			IValidator<ApplicantDto> validator)
         {
@@ -23,32 +24,89 @@ namespace Capstone.Features.ApplicantTracking
 			_validator = validator;
         }
 
-		private async Task<bool> ApplicantExistsAsync(int id)
+		public async Task<PagedResult<ApplicantDto>> GetAllApplicantsAsync()
 		{
-			return await _context.Applicant.AnyAsync(a => a.Id == id);
+			var applicants = await _context.Applicant
+				.Select(a => new ApplicantDto
+					{
+						NationalId = a.NationalId,
+						FullName = a.FullName,
+						Gender = a.Gender,
+						BirthDate = a.BirthDate,
+						Address = a.Address,
+						Phone = a.Phone,
+						Email = a.Email,
+						ExperienceYears = a.ExperienceYears,
+						AppliedPosition = a.AppliedPosition,
+						AppliedDate = a.AppliedDate,
+						AskingSalary = a.AskingSalary,
+					})
+				.ToListAsync();
+
+			var totalCount = await _context.Applicant.CountAsync();
+			
+			return new PagedResult<ApplicantDto>(applicants, totalCount, 1);
 		}
 
-        public async Task<IEnumerable<ApplicantDto>> GetApplicantsAsync()
+        public async Task<PagedResult<ApplicantDto>> GetApplicantsAsync(
+			PagingParams pagingParams,
+			ApplicantTrackingFilterParams filterParams)
         {
-            return await _context.Applicant.Select(a => new ApplicantDto
-			{
-				NationalId = a.NationalId,
-				FullName = a.FullName,
-				Gender = a.Gender,
-				BirthDate = a.BirthDate,
-				Address = a.Address,
-				Phone = a.Phone,
-				Email = a.Email,
-				ExperienceYears = a.ExperienceYears,
-				AppliedPosition = a.AppliedPosition,
-				AppliedDate = a.AppliedDate,
-				AskingSalary = a.AskingSalary,
-			}).ToListAsync();
+			var page = pagingParams.Page;
+			var pageSize = pagingParams.PageSize;
+
+			var SubName = filterParams.SubName;
+			var Gender = filterParams.Gender;
+			var Address = filterParams.Address;
+			var ExperienceYears = filterParams.ExperienceYears;
+			var AppliedPosition = filterParams.AppliedPosition;
+			var AppliedDateFrom = filterParams.AppliedDateFrom;
+			var AppliedDateTo = filterParams.AppliedDateTo;
+			var AskingSalary = filterParams.AskingSalary;
+
+			var queryableFilteredApplicantDtos = _context.Applicant
+				.Where(a => SubName == null || a.FullName.ToLower().Contains(SubName.ToLower()))
+				.Where(a => Gender == null || a.Gender.ToLower().Equals(Gender.ToLower()))
+				.Where(a => Address == null || a.Address.ToLower().Contains(Address.ToLower()))
+				.Where(a => ExperienceYears == null || a.ExperienceYears == ExperienceYears)
+				.Where(a => AppliedPosition == null || a.AppliedPosition == AppliedPosition)
+				.Where(a => ((AppliedDateFrom == null && AppliedDateTo == null) ||
+					(a.AppliedDate >= AppliedDateFrom && a.AppliedDate <= AppliedDateTo)))
+				.Where(a => AskingSalary == null || a.AskingSalary == AskingSalary)
+				.Select(a => new ApplicantDto
+				{
+					NationalId = a.NationalId,
+					FullName = a.FullName,
+					Gender = a.Gender,
+					BirthDate = a.BirthDate,
+					Address = a.Address,
+					Phone = a.Phone,
+					Email = a.Email,
+					ExperienceYears = a.ExperienceYears,
+					AppliedPosition = a.AppliedPosition,
+					AppliedDate = a.AppliedDate,
+					AskingSalary = a.AskingSalary,
+				});
+
+			var pagedApplicantDtos = await queryableFilteredApplicantDtos
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+
+			var totalCount = await queryableFilteredApplicantDtos.CountAsync();
+
+			return new PagedResult<ApplicantDto>(
+				items: pagedApplicantDtos, 
+				totalCount: totalCount,
+				page: page, 
+				pageSize: pageSize);
+
         }
 
-		public async Task<ApplicantDto?> GetApplicantAsync(int id)
+		public async Task<ApplicantDto?> GetApplicantAsync(string NationalId)
 		{
-			var applicant = await _context.Applicant.FindAsync(id);
+			var applicant = await _context.Applicant
+				.SingleAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
 			{
@@ -98,6 +156,33 @@ namespace Capstone.Features.ApplicantTracking
 				AskingSalary = applicantDto.AskingSalary,
 			};
 			await _context.Applicant.AddAsync(applicant);
+			await _context.SaveChangesAsync();
+
+			return true;
+		}
+
+		public async Task<bool> UpdateApplicantAsync(string NationalId, ApplicantDto applicantDto)
+		{
+			var applicant = await _context.Applicant
+				.SingleAsync(a => a.NationalId == NationalId);
+
+			if (applicant == null)
+			{
+				return false;
+			}
+
+			applicant.NationalId = applicantDto.NationalId;
+			applicant.FullName = applicantDto.FullName;
+			applicant.Gender = applicantDto.Gender;
+			applicant.BirthDate = applicantDto.BirthDate;
+			applicant.Address = applicantDto.Address;
+			applicant.Phone = applicantDto.Phone;
+			applicant.Email = applicantDto.Email;
+			applicant.ExperienceYears = applicantDto.ExperienceYears;
+			applicant.AppliedPosition = applicantDto.AppliedPosition;
+			applicant.AppliedDate = applicantDto.AppliedDate;
+			applicant.AskingSalary = applicantDto.AskingSalary;
+
 			await _context.SaveChangesAsync();
 
 			return true;

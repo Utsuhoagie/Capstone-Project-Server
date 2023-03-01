@@ -9,6 +9,7 @@ using Capstone.Data;
 using Capstone.Models;
 using Capstone.Features.ApplicantTracking;
 using Microsoft.AspNetCore.Cors;
+using Capstone.Pagination;
 
 namespace Capstone.Features.ApplicantTracking
 {
@@ -23,84 +24,119 @@ namespace Capstone.Features.ApplicantTracking
             _service = service;
         }
 
-        // GET: api/ApplicantTracking
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ApplicantDto>>> GetApplicant()
-        {
-            var results = await _service.GetApplicantsAsync();
+		// GET:
+		// api/ApplicantTracking
+		//						?page=1&pageSize=10
+		//						?SubName&Gender&Address&ExperienceYears&AppliedPosition&AppliedDate&AskingSalary
+		[HttpGet]
+		public async Task<IActionResult> GetApplicants(
+			int? page, int? pageSize,
+			string? SubName, string? Gender, string? Address, int? ExperienceYears,
+			string? AppliedPosition, DateTimeOffset? AppliedDateFrom, DateTimeOffset? AppliedDateTo, int? AskingSalary)
+		{
+			if (page == null || pageSize == null)
+			{
+				return Ok(await _service.GetAllApplicantsAsync());
+			}
 
-            return Ok(results);
-        }
+			if (page < 1 || pageSize < 1)
+			{
+				return BadRequest();
+			}
 
-        // GET: api/ApplicantTracking/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApplicantDto>> GetApplicant(int id)
-        {
-            var applicant = await _service.GetApplicantAsync(id);
+			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
+			ApplicantTrackingFilterParams filterParams = new ApplicantTrackingFilterParams
+			{
+				SubName = SubName,
+				Gender = Gender,
+				Address = Address,
+				ExperienceYears = ExperienceYears,
+				AppliedPosition = AppliedPosition,
+				AppliedDateFrom = AppliedDateFrom,
+				AppliedDateTo = AppliedDateTo,
+				AskingSalary = AskingSalary
+			};
 
-            if (applicant == null)
-            {
-                return NotFound();
-            }
+			var applicants = await _service
+				.GetApplicantsAsync(pagingParams, filterParams);
 
-            return applicant;
-        }
+			return Ok(applicants);
+		}
 
-        // POST: api/ApplicantTracking
-        [HttpPost]
+		/*[HttpGet]
+		public async Task<IActionResult> GetApplicants()
+		{
+			return Ok(await _service.GetAllApplicantsAsync());
+		}*/
+
+		// GET: api/ApplicantTracking/012012012
+		[HttpGet("{NationalId}")]
+		public async Task<ActionResult<ApplicantDto>> GetApplicant(string NationalId)
+		{
+			var applicant = await _service.GetApplicantAsync(NationalId);
+
+			if (applicant == null)
+			{
+				return NotFound();
+			}
+
+			return Ok(applicant);
+		}
+
+		// POST: api/ApplicantTracking/Create
+		[HttpPost("Create")]
 		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
-		//public async Task<ActionResult<object>> PostApplicant(ApplicantDto applicantDto)
 		{
 			await _service.AddApplicantAsync(applicantDto);
 
             return CreatedAtAction(
 				actionName: "GetApplicant", 
-				//routeValues: new { id = applicantDto.Id },
+				routeValues: new { NationalId = applicantDto.NationalId },
 				value: applicantDto
 			);
         }
 
-		// PUT: api/ApplicantTracking/5
-		/*        [HttpPut("{id}")]
-				public async Task<IActionResult> PutApplicant(int id, Applicant applicant)
+		// PUT: api/ApplicantTracking/Update?NationalId=<string>
+		[HttpPut("Update")]
+		public async Task<IActionResult> PutApplicant(
+			[FromQuery] string NationalId, 
+			[FromBody] ApplicantDto applicantDto)
+		{
+			if (NationalId != applicantDto.NationalId)
+			{
+				return BadRequest();
+			}
+
+			var result = await _service.UpdateApplicantAsync(NationalId, applicantDto);
+
+			if (result == false)
+			{
+				return BadRequest();
+			}
+
+			return NoContent();
+
+			// DEFAULT GENERATED
+/*			_context.Entry(applicant).State = EntityState.Modified;
+			try
+			{
+				await _context.SaveChangesAsync();
+			}
+			catch (DbUpdateConcurrencyException)
+			{
+				if (!ApplicantExists(id))
 				{
-					if (id != applicant.Id)
-					{
-						return BadRequest();
-					}
+					return NotFound();
+				}
+				else
+				{
+					throw;
+				}
+			}*/
+		}
 
-					_context.Entry(applicant).State = EntityState.Modified;
-
-					try
-					{
-						await _context.SaveChangesAsync();
-					}
-					catch (DbUpdateConcurrencyException)
-					{
-						if (!ApplicantExists(id))
-						{
-							return NotFound();
-						}
-						else
-						{
-							throw;
-						}
-					}
-
-					return NoContent();
-				}*/
-
-		// DELETE: api/ApplicantTracking
-		//[HttpDelete]
-		//public async Task<IActionResult> DeleteApplicants()
-		//{
-		//	await _service.DeleteApplicantsAsync();
-
-		//	return NoContent();
-		//}
-
-        // DELETE: api/ApplicantTracking?NationalId={string}
-        [HttpDelete]
+		// DELETE: api/ApplicantTracking/Delete?NationalId={string}
+		[HttpDelete("Delete")]
         public async Task<IActionResult> DeleteApplicant([FromQuery] string? NationalId)
         {
 			if (NationalId == null)
