@@ -8,23 +8,19 @@ namespace Capstone.Features.ApplicantModule
 {
 	public class ApplicantValidator: AbstractValidator<ApplicantDto>
 	{
-		private readonly CapstoneContext _context;
-
-		public ApplicantValidator(CapstoneContext context) {
-			_context = context;
-
+		public ApplicantValidator() {
 			RuleFor(a => a.NationalId)
 				.NotEmpty()
-				.Must(n => new[] {9, 12}.Contains(n.Length))
-				.WithMessage("Số CMND/CCCD chỉ có thể có 9 hoặc 12 số.")
-				.Must(n =>
-				{
-					var duplicateApplicant = _context.Applicant
-						.FirstOrDefault(a => a.NationalId == n);
+				.Must(n => new[] { 9, 12 }.Contains(n.Length))
+				.WithMessage("Số CMND/CCCD chỉ có thể có 9 hoặc 12 số.");
+				//.Must(n =>
+				//{
+				//	var duplicateApplicant = _context.People.OfType<Applicant>()
+				//		.FirstOrDefault(a => a.NationalId == n);
 
-					return duplicateApplicant == null;
-				})
-				.WithMessage("Số CMND/CCCD không được trùng.");
+				//	return duplicateApplicant == null;
+				//})
+				//.WithMessage("Số CMND/CCCD không được trùng.");
 
 			RuleFor(a => a.FullName)
 				.NotEmpty()

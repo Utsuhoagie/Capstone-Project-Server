@@ -11,7 +11,7 @@ using Capstone.Data;
 using Capstone.Models;
 using Capstone.Features;
 using Capstone.Features.ApplicantModule;
-
+using Capstone.Features.EmployeeModule;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CapstoneContext>(options =>
@@ -47,11 +47,14 @@ builder.Services.AddSwaggerGen();
 
 // ---- App Services ----
 builder.Services.AddScoped<IApplicantService, ApplicantService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
 
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+
 builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
+builder.Services.AddScoped<IValidator<EmployeeDto>, EmployeeValidator>();
 
 // === End Services Config.
 

@@ -15,7 +15,8 @@ namespace Capstone.Data
         }
 
 		public DbSet<Person> People { get; set; } = default!;
-        public DbSet<Applicant> Applicant { get; set; } = default!;
+        //public DbSet<Applicant> Applicants { get; set; } = default!;
+		//public DbSet<Employee> Employees { get; set; } = default!;
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -25,6 +26,10 @@ namespace Capstone.Data
 
 			modelBuilder.Entity<Applicant>()
 				.Property(a => a.AppliedDate)
+				.HasColumnType("datetimeoffset");
+
+			modelBuilder.Entity<Employee>()
+				.Property(e => e.EmployedDate)
 				.HasColumnType("datetimeoffset");
 		}
     }

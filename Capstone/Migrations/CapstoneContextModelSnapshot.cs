@@ -65,12 +65,12 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("People", (string)null);
+                    b.ToTable("People");
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
 
-            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
+            modelBuilder.Entity("Capstone.Models.Applicant", b =>
                 {
                     b.HasBaseType("Capstone.Models.Person");
 
@@ -84,7 +84,30 @@ namespace Capstone.Migrations
                     b.Property<int>("AskingSalary")
                         .HasColumnType("int");
 
-                    b.HasDiscriminator().HasValue("ApplicantModule");
+                    b.HasDiscriminator().HasValue("Applicant");
+                });
+
+            modelBuilder.Entity("Capstone.Models.Employee", b =>
+                {
+                    b.HasBaseType("Capstone.Models.Person");
+
+                    b.Property<DateTimeOffset>("EmployedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("EndHour")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Salary")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StartHour")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue("Employee");
                 });
 #pragma warning restore 612, 618
         }

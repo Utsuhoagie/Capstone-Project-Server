@@ -25,7 +25,7 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<PagedResult<ApplicantDto>> GetAllApplicantsAsync()
 		{
-			var applicants = await _context.Applicant
+			var applicants = await _context.People.OfType<Applicant>()
 				.Select(a => new ApplicantDto
 					{
 						NationalId = a.NationalId,
@@ -42,7 +42,7 @@ namespace Capstone.Features.ApplicantModule
 					})
 				.ToListAsync();
 
-			var totalCount = await _context.Applicant.CountAsync();
+			var totalCount = await _context.People.OfType<Applicant>().CountAsync();
 			
 			return new PagedResult<ApplicantDto>(applicants, totalCount, 1);
 		}
@@ -63,7 +63,7 @@ namespace Capstone.Features.ApplicantModule
 			var AppliedDateTo = filterParams.AppliedDateTo;
 			var AskingSalary = filterParams.AskingSalary;
 
-			var queryableFilteredApplicantDtos = _context.Applicant
+			var queryableFilteredApplicantDtos = _context.People.OfType<Applicant>()
 				.Where(a => SubName == null || a.FullName.ToLower().Contains(SubName.ToLower()))
 				.Where(a => Gender == null || a.Gender.ToLower().Equals(Gender.ToLower()))
 				.Where(a => Address == null || a.Address.ToLower().Contains(Address.ToLower()))
@@ -104,7 +104,7 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<ApplicantDto?> GetApplicantAsync(string NationalId)
 		{
-			var applicant = await _context.Applicant
+			var applicant = await _context.People.OfType<Applicant>()
 				.SingleAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
@@ -132,13 +132,13 @@ namespace Capstone.Features.ApplicantModule
 		{
 			await _validator.ValidateAndThrowAsync(applicantDto);
 
-			//var duplicateApplicant = await _context.Applicant
-			//	.SingleAsync(a => a.NationalId == applicantDto.NationalId);
+			var duplicateApplicant = await _context.People
+				.SingleOrDefaultAsync(p => p.NationalId == applicantDto.NationalId);
 
-			//if (duplicateApplicant != null)
-			//{
-			//	return false;
-			//}
+			if (duplicateApplicant != null)
+			{
+				return false;
+			}
 
 			var applicant = new Applicant
 			{
@@ -154,7 +154,7 @@ namespace Capstone.Features.ApplicantModule
 				AppliedDate = applicantDto.AppliedDate,
 				AskingSalary = applicantDto.AskingSalary,
 			};
-			await _context.Applicant.AddAsync(applicant);
+			await _context.People.AddAsync(applicant);
 			await _context.SaveChangesAsync();
 
 			return true;
@@ -162,8 +162,8 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<bool> UpdateApplicantAsync(string NationalId, ApplicantDto applicantDto)
 		{
-			var applicant = await _context.Applicant
-				.SingleAsync(a => a.NationalId == NationalId);
+			var applicant = await _context.People.OfType<Applicant>()
+				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
 			{
@@ -187,10 +187,10 @@ namespace Capstone.Features.ApplicantModule
 			return true;
 		}
 
-		public async Task<bool> DeleteApplicantsAsync()
+		public async Task<bool> DeleteAllApplicantsAsync()
 		{
-			var applicants = await _context.Applicant.ToListAsync();
-			_context.Applicant.RemoveRange(applicants);
+			var applicants = await _context.People.OfType<Applicant>().ToListAsync();
+			_context.People.RemoveRange(applicants);
 			await _context.SaveChangesAsync();
 
 			return true;
@@ -198,15 +198,50 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<bool> DeleteApplicantAsync(string NationalId)
 		{
-			var applicant = await _context.Applicant
-				.SingleAsync(a => a.NationalId == NationalId);
+			var applicant = await _context.People.OfType<Applicant>()
+				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
 			{
 				return false;
 			}
 
-			_context.Applicant.Remove(applicant);
+			_context.People.Remove(applicant);
+			await _context.SaveChangesAsync();
+
+			return true;
+		}
+	
+		public async Task<bool> EmployApplicantAsync(string NationalId, EmployeeDto employeeDto)
+		{
+			var applicant = await _context.People.OfType<Applicant>()
+				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
+
+			if (applicant == null)
+			{
+				return false;
+			}
+
+			var employee = new Employee
+			{
+				NationalId = employeeDto.NationalId,
+				FullName = employeeDto.FullName,
+				Gender = employeeDto.Gender,
+				BirthDate = employeeDto.BirthDate,
+				Address = employeeDto.Address,
+				Phone = employeeDto.Phone,
+				Email = employeeDto.Email,
+				ExperienceYears = employeeDto.ExperienceYears,
+				Position = employeeDto.Position,
+				EmployedDate = employeeDto.EmployedDate,
+				Salary = employeeDto.Salary,
+				StartHour = employeeDto.StartHour,
+				EndHour = employeeDto.EndHour
+			};
+
+			_context.People.Remove(applicant);
+			_context.People.Add(employee);
+
 			await _context.SaveChangesAsync();
 
 			return true;

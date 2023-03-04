@@ -16,8 +16,10 @@ namespace Capstone.Features.ApplicantModule
 
 		Task<bool> UpdateApplicantAsync(string NationalId, ApplicantDto applicantDto);
 
-		Task<bool> DeleteApplicantsAsync();
+		Task<bool> DeleteAllApplicantsAsync();
 
 		Task<bool> DeleteApplicantAsync(string NationalId);
+
+		Task<bool> EmployApplicantAsync(string NationalId, EmployeeDto employeeDto);
 	}
 }

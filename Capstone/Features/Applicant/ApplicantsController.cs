@@ -14,19 +14,19 @@ namespace Capstone.Features.ApplicantModule
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ApplicantController : ControllerBase
+    public class ApplicantsController : ControllerBase
     {
         private readonly IApplicantService _service;
 
-        public ApplicantController(IApplicantService service)
+        public ApplicantsController(IApplicantService service)
         {
 			_service = service;
         }
 
 		// GET:
-		// api/ApplicantTracking
-		//						?page=1&pageSize=10
-		//						?SubName&Gender&Address&ExperienceYears&AppliedPosition&AppliedDate&AskingSalary
+		// api/Applicants
+		//				?page=1&pageSize=10
+		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
 		[HttpGet]
 		public async Task<IActionResult> GetApplicants(
 			int? page, int? pageSize,
@@ -56,37 +56,42 @@ namespace Capstone.Features.ApplicantModule
 				AskingSalary = AskingSalary
 			};
 
-			var applicants = await _service
+			var applicantDtos = await _service
 				.GetApplicantsAsync(pagingParams, filterParams);
 
-			return Ok(applicants);
+			return Ok(applicantDtos);
 		}
 
 		/*[HttpGet]
-		public async Task<IActionResult> GetApplicants()
+		public async Task<IActionResult> GetEmployees()
 		{
-			return Ok(await _service.GetAllApplicantsAsync());
+			return Ok(await _service.GetAllEmployeesAsync());
 		}*/
 
-		// GET: api/ApplicantTracking/012012012
+		// GET: api/Applicants/012012012
 		[HttpGet("{NationalId}")]
 		public async Task<ActionResult<ApplicantDto>> GetApplicant(string NationalId)
 		{
-			var applicant = await _service.GetApplicantAsync(NationalId);
+			var applicantDto = await _service.GetApplicantAsync(NationalId);
 
-			if (applicant == null)
+			if (applicantDto == null)
 			{
 				return NotFound();
 			}
 
-			return Ok(applicant);
+			return Ok(applicantDto);
 		}
 
-		// POST: api/ApplicantTracking/Create
+		// POST: api/Applicants/Create
 		[HttpPost("Create")]
 		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
 		{
-			await _service.AddApplicantAsync(applicantDto);
+			var result = await _service.AddApplicantAsync(applicantDto);
+
+			if (result == false)
+			{
+				return BadRequest();
+			}
 
             return CreatedAtAction(
 				actionName: "GetApplicant", 
@@ -95,7 +100,7 @@ namespace Capstone.Features.ApplicantModule
 			);
         }
 
-		// PUT: api/ApplicantTracking/Update?NationalId=<string>
+		// PUT: api/Applicants/Update?NationalId=<string>
 		[HttpPut("Update")]
 		public async Task<IActionResult> PutApplicant(
 			[FromQuery] string NationalId, 
@@ -116,7 +121,7 @@ namespace Capstone.Features.ApplicantModule
 			return NoContent();
 
 			// DEFAULT GENERATED
-/*			_context.Entry(applicant).State = EntityState.Modified;
+/*			_context.Entry(applicantDto).State = EntityState.Modified;
 			try
 			{
 				await _context.SaveChangesAsync();
@@ -134,13 +139,13 @@ namespace Capstone.Features.ApplicantModule
 			}*/
 		}
 
-		// DELETE: api/ApplicantTracking/Delete?NationalId={string}
+		// DELETE: api/Applicants/Delete?NationalId={string}
 		[HttpDelete("Delete")]
         public async Task<IActionResult> DeleteApplicant([FromQuery] string? NationalId)
         {
 			if (NationalId == null)
 			{
-				await _service.DeleteApplicantsAsync();
+				await _service.DeleteAllApplicantsAsync();
 
 				return NoContent();
 			}
@@ -155,5 +160,20 @@ namespace Capstone.Features.ApplicantModule
             return NoContent();
         }
 
+		// POST: api/Applicants/Employ
+		[HttpPost("Employ")]
+		public async Task<IActionResult> EmployApplicant(
+			[FromQuery] string NationalId,
+			[FromBody] EmployeeDto employeeDto)
+		{
+			var result = await _service.EmployApplicantAsync(NationalId, employeeDto);
+
+			if (result == false)
+			{
+				return BadRequest();
+			}
+
+			return Ok();
+		}
     }
 }

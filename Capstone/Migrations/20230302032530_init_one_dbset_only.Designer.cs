@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Capstone.Migrations
 {
     [DbContext(typeof(CapstoneContext))]
-    [Migration("20230220015421_Change_PersonOptionalFields")]
-    partial class Change_PersonOptionalFields
+    [Migration("20230302032530_init_one_dbset_only")]
+    partial class init_one_dbset_only
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -36,8 +36,8 @@ namespace Capstone.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("BirthDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("BirthDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
@@ -72,12 +72,12 @@ namespace Capstone.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
 
-            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
+            modelBuilder.Entity("Capstone.Models.Applicant", b =>
                 {
                     b.HasBaseType("Capstone.Models.Person");
 
-                    b.Property<DateTime>("AppliedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("AppliedDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("AppliedPosition")
                         .IsRequired()
@@ -86,7 +86,30 @@ namespace Capstone.Migrations
                     b.Property<int>("AskingSalary")
                         .HasColumnType("int");
 
-                    b.HasDiscriminator().HasValue("ApplicantModule");
+                    b.HasDiscriminator().HasValue("Applicant");
+                });
+
+            modelBuilder.Entity("Capstone.Models.Employee", b =>
+                {
+                    b.HasBaseType("Capstone.Models.Person");
+
+                    b.Property<DateTimeOffset>("EmployedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("EndHour")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Salary")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StartHour")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue("Employee");
                 });
 #pragma warning restore 612, 618
         }
