@@ -109,7 +109,7 @@ namespace Capstone.Features.EmployeeModule
 		public async Task<EmployeeDto?> GetEmployeeAsync(string NationalId)
 		{
 			var employee = await _context.People.OfType<Employee>()
-				.SingleAsync(e => e.NationalId == NationalId);
+				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
 			{
@@ -138,13 +138,13 @@ namespace Capstone.Features.EmployeeModule
 		{
 			await _validator.ValidateAndThrowAsync(employeeDto);
 
-			//var duplicateEmployee = await _context.People.OfType<Employee>()
-			//	.SingleAsync(e => e.NationalId == employeeDto.NationalId);
+			var duplicatePerson = await _context.People
+				.SingleOrDefaultAsync(p => p.NationalId == employeeDto.NationalId);
 
-			//if (duplicateEmployee != null)
-			//{
-			//	return false;
-			//}
+			if (duplicatePerson != null)
+			{
+				return false;
+			}
 
 			var employee = new Employee
 			{
@@ -171,7 +171,7 @@ namespace Capstone.Features.EmployeeModule
 		public async Task<bool> UpdateEmployeeAsync(string NationalId, EmployeeDto employeeDto)
 		{
 			var employee = await _context.People.OfType<Employee>()
-				.SingleAsync(e => e.NationalId == NationalId);
+				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
 			{
@@ -209,7 +209,7 @@ namespace Capstone.Features.EmployeeModule
 		public async Task<bool> DeleteEmployeeAsync(string NationalId)
 		{
 			var employee = await _context.People.OfType<Employee>()
-				.SingleAsync(e => e.NationalId == NationalId);
+				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
 			{

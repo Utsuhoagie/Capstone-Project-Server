@@ -105,7 +105,7 @@ namespace Capstone.Features.ApplicantModule
 		public async Task<ApplicantDto?> GetApplicantAsync(string NationalId)
 		{
 			var applicant = await _context.People.OfType<Applicant>()
-				.SingleAsync(a => a.NationalId == NationalId);
+				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
 
 			if (applicant == null)
 			{
@@ -132,10 +132,10 @@ namespace Capstone.Features.ApplicantModule
 		{
 			await _validator.ValidateAndThrowAsync(applicantDto);
 
-			var duplicateApplicant = await _context.People
+			var duplicatePerson = await _context.People
 				.SingleOrDefaultAsync(p => p.NationalId == applicantDto.NationalId);
 
-			if (duplicateApplicant != null)
+			if (duplicatePerson != null)
 			{
 				return false;
 			}
