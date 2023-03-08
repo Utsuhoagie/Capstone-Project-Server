@@ -12,30 +12,70 @@ using Capstone.Models;
 using Capstone.Features;
 using Capstone.Features.ApplicantModule;
 using Capstone.Features.EmployeeModule;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Capstone.Features.Auth;
+using Capstone.Features.Auth.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// === Add Services to the container.
+
 builder.Services.AddDbContext<CapstoneContext>(options =>
-    options.UseSqlServer(
-		builder.Configuration.GetConnectionString("CapstoneContext") 
+	options.UseSqlServer(
+		builder.Configuration.GetConnectionString("CapstoneContext")
 		?? throw new InvalidOperationException("Connection string 'CapstoneContext' not found.")
 	)
 );
 
-// === Add Services to the container.
-
-// ---- AUTH ----
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//	.AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+// ---- Auth ----
+builder.Services
+	.AddAuthentication(options =>
+	{
+		options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+		options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+		options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	})
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateIssuerSigningKey = true,
+			ValidateLifetime = true,
+			ValidIssuer = builder.Configuration.GetSection("JWT:ValidIssuer").Value,
+			ValidAudience = builder.Configuration.GetSection("JWT:ValidAudience").Value,
+			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+				builder.Configuration.GetSection("JWT:SecretKey").Value
+			))
+		};
+	});
+builder.Services
+	.AddAuthorization();
+builder.Services
+	.AddIdentity<AuthUser, IdentityRole>(options =>
+	{
+		options.User.RequireUniqueEmail = true;
+		options.Password.RequiredLength = 8;
+		options.Password.RequireUppercase = false;
+		options.Password.RequireNonAlphanumeric = false;
+	})
+	.AddEntityFrameworkStores<CapstoneContext>();
+builder.Services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
 
 // ---- General ----
-builder.Services.AddControllers(options => 
+builder.Services
+	.AddControllers(options => 
 	{
 		options.Filters.Add<HttpResponseExceptionFilter>();
 	})
-	.AddJsonOptions(options => { 
+	.AddJsonOptions(options => 
+	{ 
 		options.JsonSerializerOptions.PropertyNamingPolicy = null;
 	});
-builder.Services.AddCors(p => 
+builder.Services
+	.AddCors(p => 
 	p.AddPolicy("Capstone", b => 
 		b.WithOrigins("http://localhost:3000")
 		 .AllowAnyHeader()
@@ -44,6 +84,9 @@ builder.Services.AddCors(p =>
 );
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// ---- Auth Service ----
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ---- App Services ----
 builder.Services.AddScoped<IApplicantService, ApplicantService>();
@@ -71,7 +114,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("Capstone");
 
-//app.UseAuthentication();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

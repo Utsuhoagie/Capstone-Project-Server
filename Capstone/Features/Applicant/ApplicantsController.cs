@@ -9,6 +9,9 @@ using Capstone.Data;
 using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
 using Capstone.Pagination;
+using Microsoft.AspNetCore.Authorization;
+using Capstone.Features.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Capstone.Features.ApplicantModule
 {
@@ -28,6 +31,7 @@ namespace Capstone.Features.ApplicantModule
 		//				?page=1&pageSize=10
 		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
 		[HttpGet]
+		[Authorize(Roles = AuthRoles.Employee)]
 		public async Task<IActionResult> GetApplicants(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
