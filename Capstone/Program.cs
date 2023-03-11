@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Capstone.Features.Auth;
 using Capstone.Features.Auth.Models;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,17 @@ builder.Services.AddDbContext<CapstoneContext>(options =>
 );
 
 // ---- Auth ----
+// NOTE: AddIdentity MUST go before AddAuthentication
+// Because it has its own AddAuthentication that uses Cookies, not JWT
+builder.Services
+	.AddIdentity<EmployeeUser, IdentityRole>(options =>
+	{
+		options.User.RequireUniqueEmail = true;
+		options.Password.RequiredLength = 8;
+		options.Password.RequireUppercase = false;
+		options.Password.RequireNonAlphanumeric = false;
+	})
+	.AddEntityFrameworkStores<CapstoneContext>();
 builder.Services
 	.AddAuthentication(options =>
 	{
@@ -44,6 +56,7 @@ builder.Services
 			ValidateAudience = true,
 			ValidateIssuerSigningKey = true,
 			ValidateLifetime = true,
+			ClockSkew = TimeSpan.Zero,
 			ValidIssuer = builder.Configuration.GetSection("JWT:ValidIssuer").Value,
 			ValidAudience = builder.Configuration.GetSection("JWT:ValidAudience").Value,
 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -52,16 +65,12 @@ builder.Services
 		};
 	});
 builder.Services
-	.AddAuthorization();
-builder.Services
-	.AddIdentity<AuthUser, IdentityRole>(options =>
+	.AddAuthorization(options =>
 	{
-		options.User.RequireUniqueEmail = true;
-		options.Password.RequiredLength = 8;
-		options.Password.RequireUppercase = false;
-		options.Password.RequireNonAlphanumeric = false;
-	})
-	.AddEntityFrameworkStores<CapstoneContext>();
+		//options.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
+		//	.RequireAuthenticatedUser()
+		//	.Build();
+	});
 builder.Services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
 
 // ---- General ----

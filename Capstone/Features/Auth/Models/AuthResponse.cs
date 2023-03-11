@@ -7,8 +7,8 @@ namespace Capstone.Features.Auth.Models
     {
         public HttpStatusCode Status { get; set; }
         
-		public string? Token { get; set; }
-
 		public IEnumerable<IdentityError>? Errors { get; set; }
+
+		public string? Token { get; set; }
     }
 }

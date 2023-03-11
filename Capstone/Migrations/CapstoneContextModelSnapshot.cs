@@ -22,7 +22,7 @@ namespace Capstone.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Capstone.Features.Auth.Models.AuthUser", b =>
+            modelBuilder.Entity("Capstone.Features.Auth.Models.EmployeeUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -335,7 +335,7 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.AuthUser", null)
+                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -344,7 +344,7 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.AuthUser", null)
+                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -359,7 +359,7 @@ namespace Capstone.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Capstone.Features.Auth.Models.AuthUser", null)
+                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -368,7 +368,7 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.AuthUser", null)
+                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

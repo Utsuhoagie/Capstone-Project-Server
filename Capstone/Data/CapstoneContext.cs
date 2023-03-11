@@ -6,11 +6,10 @@ using Microsoft.EntityFrameworkCore;
 using Capstone.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using Capstone.Features.Auth.Models;
 
 namespace Capstone.Data
 {
-    public class CapstoneContext : IdentityDbContext<AuthUser>
+    public class CapstoneContext : IdentityDbContext<EmployeeUser>
     {
         public CapstoneContext (DbContextOptions<CapstoneContext> options)
             : base(options)

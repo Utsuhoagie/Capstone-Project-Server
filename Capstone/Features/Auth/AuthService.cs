@@ -1,5 +1,6 @@
 ﻿using Capstone.Data;
 using Capstone.Features.Auth.Models;
+using Capstone.Models;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -15,13 +16,13 @@ namespace Capstone.Features.Auth
 	{
 		private readonly IConfiguration _configuration;
 		private readonly CapstoneContext _context;
-		private readonly UserManager<AuthUser> _userManager;
+		private readonly UserManager<EmployeeUser> _userManager;
 		private readonly IValidator<RegisterRequest> _registerValidator;
 
 		public AuthService(
 			IConfiguration configuration,
 			CapstoneContext context, 
-			UserManager<AuthUser> userManager,
+			UserManager<EmployeeUser> userManager,
 			IValidator<RegisterRequest> registerValidator) 
 		{
 			_configuration = configuration;
@@ -29,54 +30,14 @@ namespace Capstone.Features.Auth
 			_userManager = userManager;
 			_registerValidator = registerValidator;
 		}
-
-		public async Task<AuthResponse> Register(RegisterRequest req)
-		{
-			//await _registerValidator.ValidateAndThrowAsync(req);
-
-			var user = await _userManager.FindByEmailAsync(req.Email);
-
-			if (user != null || (req.Password != req.PasswordConfirm))
-			{
-				return new AuthResponse
-				{
-					Status = HttpStatusCode.BadRequest
-				};
-			}
-
-			user = new AuthUser
-			{
-				UserName = req.Email,
-				Email = req.Email
-			};
-
-			var result = await _userManager.CreateAsync(user, req.Password);
-
-			if (!result.Succeeded)
-			{
-				return new AuthResponse
-				{
-					Status = HttpStatusCode.BadRequest,
-					Errors = result.Errors,
-				};
-			}
-
-			await _userManager.AddToRoleAsync(user, AuthRoles.Employee);
-
-			return new AuthResponse
-			{
-				Status = HttpStatusCode.Created
-				//Token = ...
-			};
-		}
-
+		
 		public async Task<AuthResponse> Login(LoginRequest req)
 		{
 			var existingUser = await _userManager.FindByEmailAsync(req.Email);
 
 			if (existingUser == null)
 			{
-				return new AuthResponse { Status = HttpStatusCode.NotFound };
+				return new AuthResponse { Status = HttpStatusCode.Unauthorized };
 			}
 
 			var isUserValid = await _userManager.CheckPasswordAsync(existingUser, req.Password);
@@ -97,13 +58,13 @@ namespace Capstone.Features.Auth
 			var claims = new List<Claim>
 			{
 				new Claim(ClaimTypes.Email, existingUser.Email),
-				new Claim(ClaimTypes.Role, userRoles.First()),
+				new Claim(ClaimTypes.Role, userRoles.Single()),
 			};
 
 			var token = new JwtSecurityToken(
 				issuer: "https://localhost:5000",
 				audience: "https://localhost:3000",
-				expires: DateTime.Now.AddMinutes(2),
+				expires: DateTime.Now.AddMinutes(10),
 				signingCredentials: signingCredentials,
 				claims: claims
 			);
@@ -116,6 +77,62 @@ namespace Capstone.Features.Auth
 				Status = HttpStatusCode.OK,
 				Token = serializedToken
 			};
+		}
+
+		/*public async Task<AuthResponse> Register(RegisterRequest req)
+{
+	//await _registerValidator.ValidateAndThrowAsync(req);
+
+	var user = await _userManager.FindByEmailAsync(req.Email);
+
+	if (user != null || (req.Password != req.PasswordConfirm))
+	{
+		return new AuthResponse
+		{
+			Status = HttpStatusCode.BadRequest
+		};
+	}
+
+	user = new EmployeeUser
+	{
+		UserName = req.Email,
+		Email = req.Email
+	};
+
+	var result = await _userManager.CreateAsync(user, req.Password);
+
+	if (!result.Succeeded)
+	{
+		return new AuthResponse
+		{
+			Status = HttpStatusCode.BadRequest,
+			Errors = result.Errors,
+		};
+	}
+
+	await _userManager.AddToRoleAsync(user, AuthRoles.Admin);
+
+	return new AuthResponse
+	{
+		Status = HttpStatusCode.Created
+		//Token = ...
+	};
+}
+*/
+
+
+		public async Task<bool> DEBUG_DELETE(string email)
+		{
+			var existingUser = await _userManager.FindByEmailAsync(email);
+
+			if (existingUser == null)
+			{
+				return false;
+			}
+
+			await _userManager.DeleteAsync(existingUser);
+
+			return true;
 		}
 	}
 }

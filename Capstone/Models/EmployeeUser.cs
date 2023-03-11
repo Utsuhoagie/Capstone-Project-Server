@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Capstone.Features.Auth.Models
+namespace Capstone.Models
 {
-    public class AuthUser : IdentityUser
+    public class EmployeeUser : IdentityUser
     {
         //public string UserName { get; set; } = string.Empty;
         //public string Password { get; set; } = string.Empty;

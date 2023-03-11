@@ -31,7 +31,7 @@ namespace Capstone.Features.ApplicantModule
 		//				?page=1&pageSize=10
 		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
 		[HttpGet]
-		[Authorize(Roles = AuthRoles.Employee)]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetApplicants(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
@@ -74,6 +74,7 @@ namespace Capstone.Features.ApplicantModule
 
 		// GET: api/Applicants/012012012
 		[HttpGet("{NationalId}")]
+		[Authorize]
 		public async Task<ActionResult<ApplicantDto>> GetApplicant(string NationalId)
 		{
 			var applicantDto = await _service.GetApplicantAsync(NationalId);
@@ -88,6 +89,7 @@ namespace Capstone.Features.ApplicantModule
 
 		// POST: api/Applicants/Create
 		[HttpPost("Create")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
 		{
 			var result = await _service.AddApplicantAsync(applicantDto);
@@ -106,6 +108,7 @@ namespace Capstone.Features.ApplicantModule
 
 		// PUT: api/Applicants/Update?NationalId=<string>
 		[HttpPut("Update")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> PutApplicant(
 			[FromQuery] string NationalId, 
 			[FromBody] ApplicantDto applicantDto)
@@ -145,6 +148,7 @@ namespace Capstone.Features.ApplicantModule
 
 		// DELETE: api/Applicants/Delete?NationalId={string}
 		[HttpDelete("Delete")]
+		[Authorize(Roles = AuthRoles.Admin)]
         public async Task<IActionResult> DeleteApplicant([FromQuery] string? NationalId)
         {
 			if (NationalId == null)
@@ -166,6 +170,7 @@ namespace Capstone.Features.ApplicantModule
 
 		// POST: api/Applicants/Employ
 		[HttpPost("Employ")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> EmployApplicant(
 			[FromQuery] string NationalId,
 			[FromBody] EmployeeDto employeeDto)

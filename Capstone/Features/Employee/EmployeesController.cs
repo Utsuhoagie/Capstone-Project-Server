@@ -9,6 +9,8 @@ using Capstone.Data;
 using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
 using Capstone.Pagination;
+using Microsoft.AspNetCore.Authorization;
+using Capstone.Features.Auth;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -28,6 +30,7 @@ namespace Capstone.Features.EmployeeModule
 		//				?page=1&pageSize=10
 		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
 		[HttpGet]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetEmployees(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
@@ -70,6 +73,7 @@ namespace Capstone.Features.EmployeeModule
 
 		// GET: api/Employee/012012012
 		[HttpGet("{NationalId}")]
+		[Authorize]
 		public async Task<ActionResult<EmployeeDto>> GetEmployee(string NationalId)
 		{
 			var employeeDto = await _service.GetEmployeeAsync(NationalId);
@@ -84,6 +88,7 @@ namespace Capstone.Features.EmployeeModule
 
 		// POST: api/Employee/Create
 		[HttpPost("Create")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<ActionResult<EmployeeDto>> PostEmployee(EmployeeDto employeeDto)
 		{
 			await _service.AddEmployeeAsync(employeeDto);
@@ -97,6 +102,9 @@ namespace Capstone.Features.EmployeeModule
 
 		// PUT: api/Employee/Update?NationalId=<string>
 		[HttpPut("Update")]
+		// NOTE, WIP: Employee can update itself, but NOT other Employees
+		// check by current logged in user?
+		[Authorize]
 		public async Task<IActionResult> PutEmployee(
 			[FromQuery] string NationalId, 
 			[FromBody] EmployeeDto employeeDto)
@@ -136,7 +144,8 @@ namespace Capstone.Features.EmployeeModule
 
 		// DELETE: api/Employee/Delete?NationalId={string}
 		[HttpDelete("Delete")]
-        public async Task<IActionResult> DeleteEmployee([FromQuery] string? NationalId)
+		[Authorize(Roles = AuthRoles.Admin)]
+		public async Task<IActionResult> DeleteEmployee([FromQuery] string? NationalId)
         {
 			if (NationalId == null)
 			{
