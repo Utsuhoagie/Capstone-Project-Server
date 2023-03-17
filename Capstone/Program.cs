@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using FluentValidation;
-
-using Capstone.ExceptionHandling;
 using Capstone.Data;
 using Capstone.Models;
 using Capstone.Features;
@@ -17,6 +15,8 @@ using System.Text;
 using Capstone.Features.Auth;
 using Capstone.Features.Auth.Models;
 using Microsoft.AspNetCore.Authorization;
+using Capstone.Features.PositionModule;
+using Capstone.Responses.ExceptionHandling;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +41,7 @@ builder.Services
 		options.Password.RequireNonAlphanumeric = false;
 	})
 	.AddEntityFrameworkStores<CapstoneContext>();
+
 builder.Services
 	.AddAuthentication(options =>
 	{
@@ -64,6 +65,7 @@ builder.Services
 			))
 		};
 	});
+
 builder.Services
 	.AddAuthorization(options =>
 	{
@@ -71,6 +73,7 @@ builder.Services
 		//	.RequireAuthenticatedUser()
 		//	.Build();
 	});
+
 builder.Services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
 
 // ---- General ----
@@ -83,6 +86,7 @@ builder.Services
 	{ 
 		options.JsonSerializerOptions.PropertyNamingPolicy = null;
 	});
+
 builder.Services
 	.AddCors(p => 
 	p.AddPolicy("Capstone", b => 
@@ -91,6 +95,7 @@ builder.Services
 		 .AllowAnyMethod()
 	)
 );
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -100,13 +105,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // ---- App Services ----
 builder.Services.AddScoped<IApplicantService, ApplicantService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-
+builder.Services.AddScoped<IPositionService, PositionService>();
 
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
 builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
 builder.Services.AddScoped<IValidator<EmployeeDto>, EmployeeValidator>();
+builder.Services.AddScoped<IValidator<PositionDto>, PositionValidator>();
 
 // === End Services Config.
 
