@@ -1,4 +1,4 @@
-﻿using Capstone.ExceptionHandling;
+﻿using Capstone.Responses.ExceptionHandling;
 using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;

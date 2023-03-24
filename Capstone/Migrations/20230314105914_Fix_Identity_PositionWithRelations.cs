@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Capstone.Migrations
 {
-    public partial class fix : Migration
+    public partial class Fix_Identity_PositionWithRelations : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -49,32 +49,16 @@ namespace Capstone.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "People",
+                name: "Positions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    NationalId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BirthDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ExperienceYears = table.Column<int>(type: "int", nullable: false),
-                    Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AppliedPosition = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AppliedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    AskingSalary = table.Column<int>(type: "int", nullable: true),
-                    Position = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Salary = table.Column<int>(type: "int", nullable: true),
-                    EmployedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    StartHour = table.Column<int>(type: "int", nullable: true),
-                    EndHour = table.Column<int>(type: "int", nullable: true)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_People", x => x.Id);
+                    table.PrimaryKey("PK_Positions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -183,15 +167,54 @@ namespace Capstone.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "AspNetRoles",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[] { "06f13a74-278b-4ce8-9bf2-2789fd8beee3", "f4f249c5-4b56-4fee-b8fa-2a8e679e1de5", "Employee", "EMPLOYEE" });
+            migrationBuilder.CreateTable(
+                name: "People",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    NationalId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BirthDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExperienceYears = table.Column<int>(type: "int", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AppliedPositionId = table.Column<int>(type: "int", nullable: true),
+                    AppliedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    AskingSalary = table.Column<int>(type: "int", nullable: true),
+                    PositionId = table.Column<int>(type: "int", nullable: true),
+                    Salary = table.Column<int>(type: "int", nullable: true),
+                    EmployedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    StartHour = table.Column<int>(type: "int", nullable: true),
+                    EndHour = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_People", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_People_Positions_AppliedPositionId",
+                        column: x => x.AppliedPositionId,
+                        principalTable: "Positions",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_People_Positions_PositionId",
+                        column: x => x.PositionId,
+                        principalTable: "Positions",
+                        principalColumn: "Id");
+                });
 
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[] { "299a99dd-5b29-468d-8f4e-568a3a9613ab", "9a84fe21-0939-44f6-a886-b7e375a3bf55", "Admin", "ADMIN" });
+                values: new object[] { "31fffc05-9fb9-4050-b94a-6afbb998b955", "944c748e-19f6-4494-bfa9-f1468eb24afd", "Employee", "EMPLOYEE" });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[] { "96d6e04a-55fc-478b-95e0-a91bc9d0d8b3", "ef44f052-fb1a-4f5f-b3f2-f12d15662bda", "Admin", "ADMIN" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -231,6 +254,16 @@ namespace Capstone.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_People_AppliedPositionId",
+                table: "People",
+                column: "AppliedPositionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_People_PositionId",
+                table: "People",
+                column: "PositionId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -258,6 +291,9 @@ namespace Capstone.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Positions");
         }
     }
 }

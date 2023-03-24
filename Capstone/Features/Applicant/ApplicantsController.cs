@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
 using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
-using Capstone.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Capstone.Responses.Pagination;
 
 namespace Capstone.Features.ApplicantModule
 {
@@ -39,7 +39,7 @@ namespace Capstone.Features.ApplicantModule
 		{
 			if (page == null || pageSize == null)
 			{
-				return Ok(await _service.GetAllApplicantsAsync());
+				return Ok(await _service.GetAllApplicants());
 			}
 
 			if (page < 1 || pageSize < 1)
@@ -54,30 +54,24 @@ namespace Capstone.Features.ApplicantModule
 				Gender = Gender,
 				Address = Address,
 				ExperienceYears = ExperienceYears,
-				AppliedPosition = AppliedPosition,
+				AppliedPositionName = AppliedPosition,
 				AppliedDateFrom = AppliedDateFrom,
 				AppliedDateTo = AppliedDateTo,
 				AskingSalary = AskingSalary
 			};
 
 			var applicantDtos = await _service
-				.GetApplicantsAsync(pagingParams, filterParams);
+				.GetApplicants(pagingParams, filterParams);
 
 			return Ok(applicantDtos);
 		}
 
-		/*[HttpGet]
-		public async Task<IActionResult> GetEmployees()
-		{
-			return Ok(await _service.GetAllEmployeesAsync());
-		}*/
-
 		// GET: api/Applicants/012012012
 		[HttpGet("{NationalId}")]
 		[Authorize]
-		public async Task<ActionResult<ApplicantDto>> GetApplicant(string NationalId)
+		public async Task<ActionResult<ApplicantDto>> GetApplicant([FromRoute] string NationalId)
 		{
-			var applicantDto = await _service.GetApplicantAsync(NationalId);
+			var applicantDto = await _service.GetApplicant(NationalId);
 
 			if (applicantDto == null)
 			{
@@ -92,11 +86,11 @@ namespace Capstone.Features.ApplicantModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
 		{
-			var result = await _service.AddApplicantAsync(applicantDto);
+			var result = await _service.AddApplicant(applicantDto);
 
-			if (result == false)
+			if (result.Success == false)
 			{
-				return BadRequest();
+				return BadRequest(result);
 			}
 
             return CreatedAtAction(
@@ -106,11 +100,11 @@ namespace Capstone.Features.ApplicantModule
 			);
         }
 
-		// PUT: api/Applicants/Update?NationalId=<string>
-		[HttpPut("Update")]
+		// PUT: api/Applicants/Update/012012012
+		[HttpPut("Update/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> PutApplicant(
-			[FromQuery] string NationalId, 
+			[FromRoute] string NationalId, 
 			[FromBody] ApplicantDto applicantDto)
 		{
 			if (NationalId != applicantDto.NationalId)
@@ -118,68 +112,50 @@ namespace Capstone.Features.ApplicantModule
 				return BadRequest();
 			}
 
-			var result = await _service.UpdateApplicantAsync(NationalId, applicantDto);
+			var result = await _service.UpdateApplicant(NationalId, applicantDto);
 
-			if (result == false)
+			if (result.Success == false)
 			{
-				return BadRequest();
+				return BadRequest(result);
 			}
 
 			return NoContent();
-
-			// DEFAULT GENERATED
-/*			_context.Entry(applicantDto).State = EntityState.Modified;
-			try
-			{
-				await _context.SaveChangesAsync();
-			}
-			catch (DbUpdateConcurrencyException)
-			{
-				if (!ApplicantExists(id))
-				{
-					return NotFound();
-				}
-				else
-				{
-					throw;
-				}
-			}*/
 		}
 
-		// DELETE: api/Applicants/Delete?NationalId={string}
-		[HttpDelete("Delete")]
+		// DELETE: api/Applicants/Delete/012012012
+		[HttpDelete("Delete/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
-        public async Task<IActionResult> DeleteApplicant([FromQuery] string? NationalId)
+        public async Task<IActionResult> DeleteApplicant([FromRoute] string? NationalId)
         {
 			if (NationalId == null)
 			{
-				await _service.DeleteAllApplicantsAsync();
+				await _service.DeleteAllApplicants();
 
 				return NoContent();
 			}
 
-			var result = await _service.DeleteApplicantAsync(NationalId);
+			var result = await _service.DeleteApplicant(NationalId);
             
-			if (result == false)
+			if (result.Success == false)
             {
-                return NotFound();
+                return NotFound(result);
             }
 
             return NoContent();
         }
 
-		// POST: api/Applicants/Employ
-		[HttpPost("Employ")]
+		// POST: api/Applicants/Employ/012012012
+		[HttpPost("Employ/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> EmployApplicant(
-			[FromQuery] string NationalId,
+			[FromRoute] string NationalId,
 			[FromBody] EmployeeDto employeeDto)
 		{
-			var result = await _service.EmployApplicantAsync(NationalId, employeeDto);
+			var result = await _service.EmployApplicant(NationalId, employeeDto);
 
-			if (result == false)
+			if (result.Success == false)
 			{
-				return BadRequest();
+				return BadRequest(result);
 			}
 
 			return Ok();

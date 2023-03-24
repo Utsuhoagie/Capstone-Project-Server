@@ -1,5 +1,5 @@
 ﻿using Capstone.Data;
-using Capstone.ExceptionHandling;
+using Capstone.Responses.ExceptionHandling;
 using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
@@ -53,7 +53,7 @@ namespace Capstone.Features.EmployeeModule
 				.NotNull()
 				.GreaterThanOrEqualTo(0);
 
-			RuleFor(e => e.Position)
+			RuleFor(e => e.PositionName)
 				.NotEmpty();
 
 			RuleFor(e => e.Salary)

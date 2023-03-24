@@ -17,8 +17,10 @@ namespace Capstone.Data
         }
 
 		public DbSet<Person> People { get; set; } = default!;
-        //public DbSet<Applicant> Applicants { get; set; } = default!;
+		//public DbSet<Applicant> Applicants { get; set; } = default!;
 		//public DbSet<Employee> Employees { get; set; } = default!;
+
+		public DbSet<Position> Positions { get; set; } = default!;
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -29,14 +31,19 @@ namespace Capstone.Data
 				.HasData(
 				new IdentityRole
 				{
+					Id = "2f89c3c2-0e18-4919-9ee5-136ccb50f78a",
 					Name = "Employee",
-					NormalizedName = "EMPLOYEE"
+					NormalizedName = "EMPLOYEE",
+					ConcurrencyStamp = "4b63da43-5bed-4afa-b24b-6cf71eb4f44a",
 				},
 				new IdentityRole
 				{
+					Id = "a1fcf63a-beb7-429b-a915-4f36bccfce18",
 					Name = "Admin",
-					NormalizedName = "ADMIN"
+					NormalizedName = "ADMIN",
+					ConcurrencyStamp = "9f791f97-52df-4f2d-9554-fc3e0ff8bde8",
 				});
+
 
 			// App
 			modelBuilder.Entity<Person>()
@@ -46,10 +53,27 @@ namespace Capstone.Data
 			modelBuilder.Entity<Applicant>()
 				.Property(a => a.AppliedDate)
 				.HasColumnType("datetimeoffset");
+			modelBuilder.Entity<Applicant>()
+				.HasOne(a => a.AppliedPosition)
+				.WithMany(p => p.Applicants)
+				.HasForeignKey(a => a.AppliedPositionId)
+				.IsRequired()
+				.OnDelete(DeleteBehavior.NoAction);
 
 			modelBuilder.Entity<Employee>()
 				.Property(e => e.EmployedDate)
 				.HasColumnType("datetimeoffset");
+			modelBuilder.Entity<Employee>()
+				.HasOne(e => e.Position)
+				.WithMany(p => p.Employees)
+				.HasForeignKey(e => e.PositionId)
+				.IsRequired()
+				.OnDelete(DeleteBehavior.NoAction);
+			modelBuilder.Entity<Employee>()
+				.HasOne(e => e.User)
+				.WithOne(u => u.Employee)
+				.HasForeignKey<EmployeeUser>(u => u.EmployeeId);
+			
 		}
     }
 }

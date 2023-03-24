@@ -9,6 +9,8 @@ namespace Capstone.Features.Auth.Models
         
 		public IEnumerable<IdentityError>? Errors { get; set; }
 
-		public string? Token { get; set; }
+		public string? AccessToken { get; set; }
+
+		public string? RefreshToken { get; set; }
     }
 }

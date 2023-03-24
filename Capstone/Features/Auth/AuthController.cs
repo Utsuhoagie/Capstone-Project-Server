@@ -20,7 +20,25 @@ namespace Capstone.Features.Auth
 			_service = service;
 		}
 
-		[HttpPost(template: "Login")]
+		[HttpPost("RegisterEmployee")]
+		public async Task<IActionResult> RegisterEmployee(RegisterEmployeeRequest req)
+		{
+			if (req == null)
+			{
+				return BadRequest();
+			}
+
+			var registerEmployeeResponse = await _service.RegisterEmployee(req);
+
+			if (registerEmployeeResponse.Status != HttpStatusCode.OK)
+			{
+				return StatusCode((int)registerEmployeeResponse.Status, registerEmployeeResponse);
+			}
+
+			return Ok(registerEmployeeResponse);
+		}
+
+		[HttpPost("Login")]
 		public async Task<IActionResult> Login(LoginRequest req)
 		{
 			if (req == null)
@@ -38,26 +56,39 @@ namespace Capstone.Features.Auth
 			return Ok(loginResponse);
 		}
 
-		//public async 
+		[HttpPost("Refresh")]
+		//[Authorize]
+		public async Task<IActionResult> Refresh(RefreshRequest req)
+		{
+			var result = await _service.Refresh(req);
+
+			if (result.Status != HttpStatusCode.OK)
+			{
+				return StatusCode((int)result.Status, result);
+			}
+
+			return Ok(result);
+		}
+
+		[HttpGet("CheckToken")]
+		[Authorize]
+		public async Task<IActionResult> CheckToken()
+		{
+			return Ok();
+		}
 
 		// ========================
 		// FOR DEBUGGING ONLY!!!!!!
 
-		[HttpDelete("{email}")]
-		public async Task<IActionResult> DEBUG_DELETE(string email)
-		{
-			return Ok(await _service.DEBUG_DELETE(email));
-		}
-
-		/*[HttpPost("Register")]
-		public async Task<IActionResult> Register(RegisterRequest req)
+		[HttpPost("DEBUG_REGISTER")]
+		public async Task<IActionResult> DEBUG_REGISTER(RegisterRequest req)
 		{
 			if (req == null)
 			{
 				return BadRequest();
 			}
 
-			var registerResponse = await _service.Register(req);
+			var registerResponse = await _service.DEBUG_REGISTER(req);
 
 			if (registerResponse.Status != HttpStatusCode.Created)
 			{
@@ -65,6 +96,12 @@ namespace Capstone.Features.Auth
 			}
 
 			return Ok(registerResponse);
-		}*/
+		}
+
+		[HttpDelete("DEBUG_DELETE/{email}")]
+		public async Task<IActionResult> DEBUG_DELETE(string email)
+		{
+			return Ok(await _service.DEBUG_DELETE(email));
+		}
 	}
 }

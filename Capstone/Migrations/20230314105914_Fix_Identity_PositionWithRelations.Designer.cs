@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Capstone.Migrations
 {
     [DbContext(typeof(CapstoneContext))]
-    [Migration("20230306150112_fix")]
-    partial class fix
+    [Migration("20230314105914_Fix_Identity_PositionWithRelations")]
+    partial class Fix_Identity_PositionWithRelations
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -24,7 +24,7 @@ namespace Capstone.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Capstone.Features.Auth.Models.EmployeeUser", b =>
+            modelBuilder.Entity("Capstone.Models.EmployeeUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -137,6 +137,23 @@ namespace Capstone.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
 
+            modelBuilder.Entity("Capstone.Models.Position", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Positions");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -166,15 +183,15 @@ namespace Capstone.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "06f13a74-278b-4ce8-9bf2-2789fd8beee3",
-                            ConcurrencyStamp = "f4f249c5-4b56-4fee-b8fa-2a8e679e1de5",
+                            Id = "31fffc05-9fb9-4050-b94a-6afbb998b955",
+                            ConcurrencyStamp = "944c748e-19f6-4494-bfa9-f1468eb24afd",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
                         {
-                            Id = "299a99dd-5b29-468d-8f4e-568a3a9613ab",
-                            ConcurrencyStamp = "9a84fe21-0939-44f6-a886-b7e375a3bf55",
+                            Id = "96d6e04a-55fc-478b-95e0-a91bc9d0d8b3",
+                            ConcurrencyStamp = "ef44f052-fb1a-4f5f-b3f2-f12d15662bda",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -293,12 +310,13 @@ namespace Capstone.Migrations
                     b.Property<DateTimeOffset>("AppliedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("AppliedPosition")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("AppliedPositionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("AskingSalary")
                         .HasColumnType("int");
+
+                    b.HasIndex("AppliedPositionId");
 
                     b.HasDiscriminator().HasValue("Applicant");
                 });
@@ -313,15 +331,16 @@ namespace Capstone.Migrations
                     b.Property<int>("EndHour")
                         .HasColumnType("int");
 
-                    b.Property<string>("Position")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("PositionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Salary")
                         .HasColumnType("int");
 
                     b.Property<int>("StartHour")
                         .HasColumnType("int");
+
+                    b.HasIndex("PositionId");
 
                     b.HasDiscriminator().HasValue("Employee");
                 });
@@ -337,7 +356,7 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
+                    b.HasOne("Capstone.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -346,7 +365,7 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
+                    b.HasOne("Capstone.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -361,7 +380,7 @@ namespace Capstone.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
+                    b.HasOne("Capstone.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -370,11 +389,40 @@ namespace Capstone.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Capstone.Features.Auth.Models.EmployeeUser", null)
+                    b.HasOne("Capstone.Models.EmployeeUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Capstone.Models.Applicant", b =>
+                {
+                    b.HasOne("Capstone.Models.Position", "AppliedPosition")
+                        .WithMany("Applicants")
+                        .HasForeignKey("AppliedPositionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AppliedPosition");
+                });
+
+            modelBuilder.Entity("Capstone.Models.Employee", b =>
+                {
+                    b.HasOne("Capstone.Models.Position", "Position")
+                        .WithMany("Employees")
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Position");
+                });
+
+            modelBuilder.Entity("Capstone.Models.Position", b =>
+                {
+                    b.Navigation("Applicants");
+
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,12 +1,14 @@
 ﻿using Capstone.Data;
-using Capstone.ExceptionHandling;
+using Capstone.Responses.ExceptionHandling;
 using Capstone.Models;
-using Capstone.Pagination;
+using Capstone.Responses.Pagination;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using Capstone.Responses.ServiceResponse;
+using Capstone.ResultsAndResponses.ServiceResult;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -23,9 +25,10 @@ namespace Capstone.Features.EmployeeModule
 			_validator = validator;
         }
 
-		public async Task<PagedResult<EmployeeDto>> GetAllEmployeesAsync()
+		public async Task<PagedResult<EmployeeDto>> GetAllEmployees()
 		{
 			var employeeDtos = await _context.People.OfType<Employee>()
+				.Include(e => e.Position)
 				.Select(e => new EmployeeDto
 					{
 						NationalId = e.NationalId,
@@ -36,7 +39,7 @@ namespace Capstone.Features.EmployeeModule
 						Phone = e.Phone,
 						Email = e.Email,
 						ExperienceYears = e.ExperienceYears,
-						Position = e.Position,
+						PositionName = e.Position.Name,
 						Salary = e.Salary,
 						EmployedDate = e.EmployedDate,
 						StartHour = e.StartHour,
@@ -49,7 +52,7 @@ namespace Capstone.Features.EmployeeModule
 			return new PagedResult<EmployeeDto>(employeeDtos, totalCount, 1);
 		}
 
-        public async Task<PagedResult<EmployeeDto>> GetEmployeesAsync(
+        public async Task<PagedResult<EmployeeDto>> GetEmployees(
 			PagingParams pagingParams,
 			EmployeeFilterParams filterParams)
         {
@@ -60,17 +63,18 @@ namespace Capstone.Features.EmployeeModule
 			var Gender = filterParams.Gender;
 			var Address = filterParams.Address;
 			var ExperienceYears = filterParams.ExperienceYears;
-			var Position = filterParams.Position;
+			var PositionName = filterParams.PositionName;
 			var EmployedDateFrom = filterParams.EmployedDateFrom;
 			var EmployedDateTo = filterParams.EmployedDateTo;
 			var Salary = filterParams.Salary;
 
 			var queryableFilteredEmployeeDtos = _context.People.OfType<Employee>()
+				.Include(e => e.Position)
 				.Where(e => SubName == null || e.FullName.ToLower().Contains(SubName.ToLower()))
 				.Where(e => Gender == null || e.Gender.ToLower().Equals(Gender.ToLower()))
 				.Where(e => Address == null || e.Address.ToLower().Contains(Address.ToLower()))
 				.Where(e => ExperienceYears == null || e.ExperienceYears == ExperienceYears)
-				.Where(e => Position == null || e.Position == Position)
+				.Where(e => PositionName == null || e.Position.Name == PositionName)
 				.Where(e => ((EmployedDateFrom == null && EmployedDateTo == null) ||
 					(e.EmployedDate >= EmployedDateFrom && e.EmployedDate <= EmployedDateTo)))
 				.Where(e => Salary == null || e.Salary == Salary)
@@ -84,7 +88,7 @@ namespace Capstone.Features.EmployeeModule
 					Phone = e.Phone,
 					Email = e.Email,
 					ExperienceYears = e.ExperienceYears,
-					Position = e.Position,
+					PositionName = e.Position.Name,
 					EmployedDate = e.EmployedDate,
 					Salary = e.Salary,
 					StartHour = e.StartHour,
@@ -106,9 +110,10 @@ namespace Capstone.Features.EmployeeModule
 
         }
 
-		public async Task<EmployeeDto?> GetEmployeeAsync(string NationalId)
+		public async Task<EmployeeDto?> GetEmployee(string NationalId)
 		{
 			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.Position)
 				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
@@ -126,7 +131,7 @@ namespace Capstone.Features.EmployeeModule
 				Phone = employee.Phone,
 				Email = employee.Email,
 				ExperienceYears = employee.ExperienceYears,
-				Position = employee.Position,
+				PositionName = employee.Position.Name,
 				Salary = employee.Salary,
 				EmployedDate = employee.EmployedDate,
 				StartHour = employee.StartHour,
@@ -134,7 +139,7 @@ namespace Capstone.Features.EmployeeModule
 			};
 		}
 
-		public async Task<bool> AddEmployeeAsync(EmployeeDto employeeDto)
+		public async Task<ServiceResult> AddEmployee(EmployeeDto employeeDto)
 		{
 			await _validator.ValidateAndThrowAsync(employeeDto);
 
@@ -143,7 +148,23 @@ namespace Capstone.Features.EmployeeModule
 
 			if (duplicatePerson != null)
 			{
-				return false;
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.DuplicatePersonError,
+				};
+			}
+
+			var position = await _context.Positions
+				.SingleOrDefaultAsync(p => p.Name == employeeDto.PositionName);
+
+			if (position == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoPositionError
+				};
 			}
 
 			var employee = new Employee
@@ -156,7 +177,7 @@ namespace Capstone.Features.EmployeeModule
 				Phone = employeeDto.Phone,
 				Email = employeeDto.Email,
 				ExperienceYears = employeeDto.ExperienceYears,
-				Position = employeeDto.Position,
+				Position = position,
 				Salary = employeeDto.Salary,
 				EmployedDate = employeeDto.EmployedDate,
 				StartHour = employeeDto.StartHour,
@@ -165,17 +186,36 @@ namespace Capstone.Features.EmployeeModule
 			await _context.People.AddAsync(employee);
 			await _context.SaveChangesAsync();
 
-			return true;
+			return new ServiceResult
+			{
+				Success = true,
+			};
 		}
 
-		public async Task<bool> UpdateEmployeeAsync(string NationalId, EmployeeDto employeeDto)
+		public async Task<ServiceResult> UpdateEmployee(string NationalId, EmployeeDto employeeDto)
 		{
 			var employee = await _context.People.OfType<Employee>()
 				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
 			{
-				return false;
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoEmployeeError
+				};
+			}
+
+			var position = await _context.Positions
+				.SingleOrDefaultAsync(p => p.Name == employeeDto.PositionName);
+
+			if (position == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoPositionError
+				};
 			}
 
 			employee.NationalId = employeeDto.NationalId;
@@ -186,7 +226,7 @@ namespace Capstone.Features.EmployeeModule
 			employee.Phone = employeeDto.Phone;
 			employee.Email = employeeDto.Email;
 			employee.ExperienceYears = employeeDto.ExperienceYears;
-			employee.Position = employeeDto.Position;
+			employee.Position = position;
 			employee.Salary = employeeDto.Salary;
 			employee.EmployedDate = employeeDto.EmployedDate;
 			employee.StartHour = employeeDto.StartHour;
@@ -194,32 +234,45 @@ namespace Capstone.Features.EmployeeModule
 
 			await _context.SaveChangesAsync();
 
-			return true;
+			return new ServiceResult
+			{
+				Success = true,
+			};
 		}
 
-		public async Task<bool> DeleteAllEmployeesAsync()
+		public async Task<ServiceResult> DeleteAllEmployees()
 		{
 			var employees = await _context.People.OfType<Employee>().ToListAsync();
 			_context.People.RemoveRange(employees);
 			await _context.SaveChangesAsync();
 
-			return true;
+			return new ServiceResult
+			{
+				Success = true,
+			};
 		}
 
-		public async Task<bool> DeleteEmployeeAsync(string NationalId)
+		public async Task<ServiceResult> DeleteEmployee(string NationalId)
 		{
 			var employee = await _context.People.OfType<Employee>()
 				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)
 			{
-				return false;
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoEmployeeError
+				};
 			}
 
 			_context.People.Remove(employee);
 			await _context.SaveChangesAsync();
 
-			return true;
+			return new ServiceResult
+			{
+				Success = true,
+			};
 		}
 	}
 }
