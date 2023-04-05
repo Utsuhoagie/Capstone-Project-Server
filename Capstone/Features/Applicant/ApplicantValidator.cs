@@ -1,5 +1,5 @@
 ﻿using Capstone.Data;
-using Capstone.ExceptionHandling;
+using Capstone.Responses.ExceptionHandling;
 using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
@@ -53,7 +53,7 @@ namespace Capstone.Features.ApplicantModule
 				.NotNull()
 				.GreaterThanOrEqualTo(0);
 
-			RuleFor(a => a.AppliedPosition)
+			RuleFor(a => a.AppliedPositionName)
 				.NotEmpty();
 
 			RuleFor(a => a.AppliedDate)

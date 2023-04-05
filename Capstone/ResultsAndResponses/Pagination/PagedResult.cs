@@ -1,4 +1,4 @@
-﻿namespace Capstone.Pagination
+﻿namespace Capstone.Responses.Pagination
 {
 	public class PagedResult<T>
 	{

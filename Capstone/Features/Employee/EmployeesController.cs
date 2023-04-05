@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
 using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
-using Capstone.Pagination;
+using Microsoft.AspNetCore.Authorization;
+using Capstone.Features.Auth;
+using Capstone.Responses.Pagination;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -26,16 +28,17 @@ namespace Capstone.Features.EmployeeModule
 		// GET:
 		// api/Employee
 		//				?page=1&pageSize=10
-		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
+		//				?SubName&Gender&Address&ExperienceYears&Position&EmployedDate&Salary
 		[HttpGet]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetEmployees(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
-			string? AppliedPosition, DateTimeOffset? AppliedDateFrom, DateTimeOffset? AppliedDateTo, int? AskingSalary)
+			string? PositionName, DateTimeOffset? EmployedDateFrom, DateTimeOffset? EmployedDateTo, int? Salary)
 		{
 			if (page == null || pageSize == null)
 			{
-				return Ok(await _service.GetAllEmployeesAsync());
+				return Ok(await _service.GetAllEmployees());
 			}
 
 			if (page < 1 || pageSize < 1)
@@ -50,29 +53,24 @@ namespace Capstone.Features.EmployeeModule
 				Gender = Gender,
 				Address = Address,
 				ExperienceYears = ExperienceYears,
-				Position = AppliedPosition,
-				EmployedDateFrom = AppliedDateFrom,
-				EmployedDateTo = AppliedDateTo,
-				Salary = AskingSalary
+				PositionName = PositionName,
+				EmployedDateFrom = EmployedDateFrom,
+				EmployedDateTo = EmployedDateTo,
+				Salary = Salary
 			};
 
 			var employeeDtos = await _service
-				.GetEmployeesAsync(pagingParams, filterParams);
+				.GetEmployees(pagingParams, filterParams);
 
 			return Ok(employeeDtos);
 		}
 
-		/*[HttpGet]
-		public async Task<IActionResult> GetEmployees()
-		{
-			return Ok(await _service.GetAllEmployeesAsync());
-		}*/
-
 		// GET: api/Employee/012012012
 		[HttpGet("{NationalId}")]
-		public async Task<ActionResult<EmployeeDto>> GetEmployee(string NationalId)
+		[Authorize]
+		public async Task<ActionResult<EmployeeDto>> GetEmployee([FromRoute] string NationalId)
 		{
-			var employeeDto = await _service.GetEmployeeAsync(NationalId);
+			var employeeDto = await _service.GetEmployee(NationalId);
 
 			if (employeeDto == null)
 			{
@@ -84,9 +82,10 @@ namespace Capstone.Features.EmployeeModule
 
 		// POST: api/Employee/Create
 		[HttpPost("Create")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<ActionResult<EmployeeDto>> PostEmployee(EmployeeDto employeeDto)
 		{
-			await _service.AddEmployeeAsync(employeeDto);
+			await _service.AddEmployee(employeeDto);
 
             return CreatedAtAction(
 				actionName: "GetEmployee", 
@@ -95,10 +94,13 @@ namespace Capstone.Features.EmployeeModule
 			);
         }
 
-		// PUT: api/Employee/Update?NationalId=<string>
-		[HttpPut("Update")]
+		// PUT: api/Employee/Update/012012012
+		[HttpPut("Update/{NationalId}")]
+		// NOTE, WIP: Employee can update itself, but NOT other Employees
+		// check by current logged in user?
+		[Authorize]
 		public async Task<IActionResult> PutEmployee(
-			[FromQuery] string NationalId, 
+			[FromRoute] string NationalId, 
 			[FromBody] EmployeeDto employeeDto)
 		{
 			if (NationalId != employeeDto.NationalId)
@@ -106,50 +108,33 @@ namespace Capstone.Features.EmployeeModule
 				return BadRequest();
 			}
 
-			var result = await _service.UpdateEmployeeAsync(NationalId, employeeDto);
+			var result = await _service.UpdateEmployee(NationalId, employeeDto);
 
-			if (result == false)
+			if (result.Success == false)
 			{
-				return BadRequest();
+				return BadRequest(result);
 			}
 
 			return NoContent();
-
-			// DEFAULT GENERATED
-/*			_context.Entry(applicant).State = EntityState.Modified;
-			try
-			{
-				await _context.SaveChangesAsync();
-			}
-			catch (DbUpdateConcurrencyException)
-			{
-				if (!ApplicantExists(id))
-				{
-					return NotFound();
-				}
-				else
-				{
-					throw;
-				}
-			}*/
 		}
 
-		// DELETE: api/Employee/Delete?NationalId={string}
-		[HttpDelete("Delete")]
-        public async Task<IActionResult> DeleteEmployee([FromQuery] string? NationalId)
+		// DELETE: api/Employee/Delete/012012012
+		[HttpDelete("Delete/{NationalId}")]
+		[Authorize(Roles = AuthRoles.Admin)]
+		public async Task<IActionResult> DeleteEmployee([FromRoute] string? NationalId)
         {
 			if (NationalId == null)
 			{
-				await _service.DeleteAllEmployeesAsync();
+				await _service.DeleteAllEmployees();
 
 				return NoContent();
 			}
 
-			var result = await _service.DeleteEmployeeAsync(NationalId);
+			var result = await _service.DeleteEmployee(NationalId);
             
-			if (result == false)
+			if (result.Success == false)
             {
-                return NotFound();
+                return NotFound(result);
             }
 
             return NoContent();

@@ -4,7 +4,8 @@ namespace Capstone.Models
 {
 	public class Applicant: Person
 	{
-		public string AppliedPosition { get; set; } = string.Empty;
+		public int AppliedPositionId { get; set; }
+		public Position AppliedPosition { get; set; } = new Position();
 
 		public DateTimeOffset AppliedDate { get; set; }
 
@@ -13,7 +14,7 @@ namespace Capstone.Models
 
 	public class ApplicantDto: PersonDto
 	{
-		public string AppliedPosition { get; set; } = string.Empty;
+		public string AppliedPositionName { get; set; } = string.Empty;
 
 		public DateTimeOffset AppliedDate { get; set; }
 

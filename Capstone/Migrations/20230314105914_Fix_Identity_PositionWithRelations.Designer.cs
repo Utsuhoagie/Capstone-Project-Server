@@ -4,6 +4,7 @@ using Capstone.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Capstone.Migrations
 {
     [DbContext(typeof(CapstoneContext))]
-    partial class CapstoneContextModelSnapshot : ModelSnapshot
+    [Migration("20230314105914_Fix_Identity_PositionWithRelations")]
+    partial class Fix_Identity_PositionWithRelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,9 +43,6 @@ namespace Capstone.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("EmployeeId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -67,12 +66,6 @@ namespace Capstone.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RefreshTokenExpiryTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -84,10 +77,6 @@ namespace Capstone.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId")
-                        .IsUnique()
-                        .HasFilter("[EmployeeId] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -194,15 +183,15 @@ namespace Capstone.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "2f89c3c2-0e18-4919-9ee5-136ccb50f78a",
-                            ConcurrencyStamp = "4b63da43-5bed-4afa-b24b-6cf71eb4f44a",
+                            Id = "31fffc05-9fb9-4050-b94a-6afbb998b955",
+                            ConcurrencyStamp = "944c748e-19f6-4494-bfa9-f1468eb24afd",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
                         {
-                            Id = "a1fcf63a-beb7-429b-a915-4f36bccfce18",
-                            ConcurrencyStamp = "9f791f97-52df-4f2d-9554-fc3e0ff8bde8",
+                            Id = "96d6e04a-55fc-478b-95e0-a91bc9d0d8b3",
+                            ConcurrencyStamp = "ef44f052-fb1a-4f5f-b3f2-f12d15662bda",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -356,15 +345,6 @@ namespace Capstone.Migrations
                     b.HasDiscriminator().HasValue("Employee");
                 });
 
-            modelBuilder.Entity("Capstone.Models.EmployeeUser", b =>
-                {
-                    b.HasOne("Capstone.Models.Employee", "Employee")
-                        .WithOne("User")
-                        .HasForeignKey("Capstone.Models.EmployeeUser", "EmployeeId");
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -443,11 +423,6 @@ namespace Capstone.Migrations
                     b.Navigation("Applicants");
 
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("Capstone.Models.Employee", b =>
-                {
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

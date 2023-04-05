@@ -6,7 +6,7 @@
 		public string? Gender { get; set; }
 		public string? Address { get; set; }
 		public int? ExperienceYears { get; set; }
-		public string? Position { get; set; }
+		public string? PositionName { get; set; }
 		public int? Salary { get; set; }
 		public DateTimeOffset? EmployedDateFrom { get; set; }
 		public DateTimeOffset? EmployedDateTo { get; set; }

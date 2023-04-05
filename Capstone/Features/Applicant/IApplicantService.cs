@@ -1,25 +1,26 @@
 ﻿using Capstone.Models;
-using Capstone.Pagination;
+using Capstone.Responses.Pagination;
+using Capstone.Responses.ServiceResponse;
 using FluentValidation.Results;
 
 namespace Capstone.Features.ApplicantModule
 {
     public interface IApplicantService
     {
-		Task<PagedResult<ApplicantDto>> GetAllApplicantsAsync();
+		Task<PagedResult<ApplicantDto>> GetAllApplicants();
 
-        Task<PagedResult<ApplicantDto>> GetApplicantsAsync(PagingParams pagingParams, ApplicantFilterParams filterParams);
+        Task<PagedResult<ApplicantDto>> GetApplicants(PagingParams pagingParams, ApplicantFilterParams filterParams);
 
-		Task<ApplicantDto?> GetApplicantAsync(string NationalId);
+		Task<ApplicantDto?> GetApplicant(string NationalId);
 
-		Task<bool> AddApplicantAsync(ApplicantDto applicantDto);
+		Task<ServiceResult> AddApplicant(ApplicantDto applicantDto);
 
-		Task<bool> UpdateApplicantAsync(string NationalId, ApplicantDto applicantDto);
+		Task<ServiceResult> UpdateApplicant(string NationalId, ApplicantDto applicantDto);
 
-		Task<bool> DeleteAllApplicantsAsync();
+		Task<ServiceResult> DeleteAllApplicants();
 
-		Task<bool> DeleteApplicantAsync(string NationalId);
+		Task<ServiceResult> DeleteApplicant(string NationalId);
 
-		Task<bool> EmployApplicantAsync(string NationalId, EmployeeDto employeeDto);
+		Task<ServiceResult> EmployApplicant(string NationalId, EmployeeDto employeeDto);
 	}
 }
