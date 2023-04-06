@@ -16,7 +16,7 @@ using System.Text;
 
 namespace Capstone.Features.Auth
 {
-    public class AuthService: IAuthService
+	public class AuthService : IAuthService
 	{
 		private readonly IConfiguration _configuration;
 		private readonly CapstoneContext _context;
@@ -28,17 +28,17 @@ namespace Capstone.Features.Auth
 
 		public AuthService(
 			IConfiguration configuration,
-			CapstoneContext context, 
+			CapstoneContext context,
 			UserManager<EmployeeUser> userManager,
-			IValidator<RegisterRequest> registerValidator) 
+			IValidator<RegisterRequest> registerValidator)
 		{
 			_configuration = configuration;
 			_context = context;
 			_userManager = userManager;
 			_registerValidator = registerValidator;
 		}
-		
-		// Auth internal methods
+
+		#region===== Auth internal methods ======
 		public string GenerateAccessToken(EmployeeUser user, string userRole)
 		{
 			var secretKey =
@@ -52,6 +52,9 @@ namespace Capstone.Features.Auth
 				new Claim(ClaimTypes.Name, user.Email),
 				new Claim(ClaimTypes.Email, user.Email),
 				new Claim(ClaimTypes.Role, userRole),
+				// these 2 claims are for easier FE usage, not used for BE
+				new Claim("Email", user.Email),
+				new Claim("Role", userRole)
 			};
 
 			var accessSecurityToken = new JwtSecurityToken(
@@ -88,7 +91,7 @@ namespace Capstone.Features.Auth
 				ValidateLifetime = false,
 				ClockSkew = TimeSpan.Zero,
 				ValidIssuer = _configuration.GetSection("JWT:ValidIssuer").Value,
-				ValidAudience = _configuration.GetSection("JWT:ValidAudience").Value,
+				ValidAudiences = _configuration.GetSection("JWT:ValidAudiences").Get<string[]>(),
 				IssuerSigningKey = new SymmetricSecurityKey(
 					Encoding.UTF8.GetBytes(
 						_configuration.GetSection("JWT:SecretKey").Value
@@ -98,8 +101,8 @@ namespace Capstone.Features.Auth
 			var handler = new JwtSecurityTokenHandler();
 			SecurityToken securityToken;
 			var principal = handler.ValidateToken(
-				accessToken, 
-				tokenValidationParameters, 
+				accessToken,
+				tokenValidationParameters,
 				out securityToken);
 			var jwtSecurityToken = securityToken as JwtSecurityToken;
 
@@ -129,8 +132,9 @@ namespace Capstone.Features.Auth
 				return true;
 			}
 		}
+		#endregion
 
-		// Auth services
+		#region===== Auth services =======
 		public async Task<AuthResponse> RegisterEmployee(RegisterEmployeeRequest req)
 		{
 			//await _registerValidator.ValidateAndThrowAsync(req);
@@ -207,7 +211,7 @@ namespace Capstone.Features.Auth
 			}
 
 			var employeePositionName = employee.Position.Name;
-			var employeeUserRole = 
+			var employeeUserRole =
 				employeePositionName == "Nhân sự" ? AuthRoles.Admin : AuthRoles.Employee;
 
 			await _userManager.AddToRoleAsync(newEmployeeUser, employeeUserRole);
@@ -224,9 +228,9 @@ namespace Capstone.Features.Auth
 
 			if (existingUser == null)
 			{
-				return new AuthResponse 
-				{ 
-					Status = HttpStatusCode.Unauthorized,
+				return new AuthResponse
+				{
+					Status = HttpStatusCode.NotFound,
 					Errors = new List<IdentityError>
 					{
 						new IdentityError
@@ -270,7 +274,7 @@ namespace Capstone.Features.Auth
 			var refreshToken = req.RefreshToken;
 
 			var principal = GetPrincipalFromExpiredToken(accessToken);
-			var userEmail = (principal.Identity!).Name;
+			var userEmail = (principal.Identity)?.Name;
 
 			var user = await _userManager.FindByEmailAsync(userEmail);
 			var userRole = (await _userManager.GetRolesAsync(user)).SingleOrDefault();
@@ -282,18 +286,21 @@ namespace Capstone.Features.Auth
 
 			var newAccessToken = GenerateAccessToken(user, userRole);
 			var newRefreshToken = GenerateRefreshToken();
+
 			user.RefreshToken = newRefreshToken;
 			user.RefreshTokenExpiryTime = DateTime.Now.AddMinutes(REFRESH_EXPIRY_MINUTES);
 
 			await _userManager.UpdateAsync(user);
 
-			return new AuthResponse 
-			{ 
-				Status = HttpStatusCode.OK, 
+			return new AuthResponse
+			{
+				Status = HttpStatusCode.OK,
 				AccessToken = newAccessToken,
 				RefreshToken = newRefreshToken
 			};
 		}
+
+		#endregion
 
 		// ==== DEBUGGING ONLY ==========
 		public async Task<AuthResponse> DEBUG_REGISTER(RegisterRequest req)
@@ -314,7 +321,7 @@ namespace Capstone.Features.Auth
 			{
 				UserName = req.Email,
 				Email = req.Email
-			};			
+			};
 
 			var result = await _userManager.CreateAsync(user, req.Password);
 

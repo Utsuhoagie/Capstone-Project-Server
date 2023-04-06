@@ -12,48 +12,48 @@ using Capstone.ResultsAndResponses.ServiceResult;
 
 namespace Capstone.Features.ApplicantModule
 {
-    public class ApplicantService : IApplicantService
-    {
-        private readonly CapstoneContext _context;
+	public class ApplicantService : IApplicantService
+	{
+		private readonly CapstoneContext _context;
 		private readonly IValidator<ApplicantDto> _validator;
 
 		public ApplicantService(
-			CapstoneContext capstoneContext, 
+			CapstoneContext capstoneContext,
 			IValidator<ApplicantDto> validator)
-        {
-            _context = capstoneContext;
+		{
+			_context = capstoneContext;
 			_validator = validator;
-        }
+		}
 
 		public async Task<PagedResult<ApplicantDto>> GetAllApplicants()
 		{
 			var applicants = await _context.People.OfType<Applicant>()
 				.Include(a => a.AppliedPosition)
 				.Select(a => new ApplicantDto
-					{
-						NationalId = a.NationalId,
-						FullName = a.FullName,
-						Gender = a.Gender,
-						BirthDate = a.BirthDate,
-						Address = a.Address,
-						Phone = a.Phone,
-						Email = a.Email,
-						ExperienceYears = a.ExperienceYears,
-						AppliedPositionName = a.AppliedPosition.Name,
-						AppliedDate = a.AppliedDate,
-						AskingSalary = a.AskingSalary,
-					})
+				{
+					NationalId = a.NationalId,
+					FullName = a.FullName,
+					Gender = a.Gender,
+					BirthDate = a.BirthDate,
+					Address = a.Address,
+					Phone = a.Phone,
+					Email = a.Email,
+					ExperienceYears = a.ExperienceYears,
+					AppliedPositionName = a.AppliedPosition.Name,
+					AppliedDate = a.AppliedDate,
+					AskingSalary = a.AskingSalary,
+				})
 				.ToListAsync();
 
 			var totalCount = await _context.People.OfType<Applicant>().CountAsync();
-			
+
 			return new PagedResult<ApplicantDto>(applicants, totalCount, 1);
 		}
 
-        public async Task<PagedResult<ApplicantDto>> GetApplicants(
+		public async Task<PagedResult<ApplicantDto>> GetApplicants(
 			PagingParams pagingParams,
 			ApplicantFilterParams filterParams)
-        {
+		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
@@ -99,12 +99,12 @@ namespace Capstone.Features.ApplicantModule
 			var totalCount = await queryableFilteredApplicantDtos.CountAsync();
 
 			return new PagedResult<ApplicantDto>(
-				items: pagedApplicantDtos, 
+				items: pagedApplicantDtos,
 				totalCount: totalCount,
-				page: page, 
+				page: page,
 				pageSize: pageSize);
 
-        }
+		}
 
 		public async Task<ApplicantDto?> GetApplicant(string NationalId)
 		{
@@ -272,7 +272,7 @@ namespace Capstone.Features.ApplicantModule
 				Success = true,
 			};
 		}
-	
+
 		public async Task<ServiceResult> EmployApplicant(string NationalId, EmployeeDto employeeDto)
 		{
 			var applicant = await _context.People.OfType<Applicant>()
@@ -313,7 +313,8 @@ namespace Capstone.Features.ApplicantModule
 				EmployedDate = employeeDto.EmployedDate,
 				Salary = employeeDto.Salary,
 				StartHour = employeeDto.StartHour,
-				EndHour = employeeDto.EndHour
+				EndHour = employeeDto.EndHour,
+				User = null,
 			};
 
 			_context.People.Remove(applicant);

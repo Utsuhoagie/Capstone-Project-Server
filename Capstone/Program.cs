@@ -17,6 +17,7 @@ using Capstone.Features.Auth.Models;
 using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.PositionModule;
 using Capstone.Responses.ExceptionHandling;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,7 @@ builder.Services.AddDbContext<CapstoneContext>(options =>
 	)
 );
 
-// ---- Auth ----
+#region---- Auth ----
 // NOTE: AddIdentity MUST go before AddAuthentication
 // Because it has its own AddAuthentication that uses Cookies, not JWT
 builder.Services
@@ -59,7 +60,8 @@ builder.Services
 			ValidateLifetime = true,
 			ClockSkew = TimeSpan.Zero,
 			ValidIssuer = builder.Configuration.GetSection("JWT:ValidIssuer").Value,
-			ValidAudience = builder.Configuration.GetSection("JWT:ValidAudience").Value,
+			ValidAudiences = builder.Configuration.GetSection("JWT:ValidAudiences").Get<string[]>(),
+			//ValidAudience = builder.Configuration.GetSection("JWT:ValidAudience").Value,
 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
 				builder.Configuration.GetSection("JWT:SecretKey").Value
 			))
@@ -75,27 +77,31 @@ builder.Services
 	});
 
 builder.Services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
+#endregion
 
-// ---- General ----
+#region---- General ----
 builder.Services
-	.AddControllers(options => 
+	.AddControllers(options =>
 	{
 		options.Filters.Add<HttpResponseExceptionFilter>();
 	})
-	.AddJsonOptions(options => 
-	{ 
+	.AddJsonOptions(options =>
+	{
 		options.JsonSerializerOptions.PropertyNamingPolicy = null;
 	});
 
 builder.Services
-	.AddCors(p => 
-	p.AddPolicy("Capstone", b => 
-		b.WithOrigins("http://localhost:3000")
+	.AddCors(p =>
+	p.AddPolicy("Capstone", b =>
+		b.WithOrigins(new[] { "http://localhost:3000", "http://localhost:19000" })
 		 .AllowAnyHeader()
 		 .AllowAnyMethod()
 	)
 );
-
+builder.Services.Configure<FormOptions>(options =>
+{
+	//options.MemoryBufferThreshold = 20 * 1024 * 1024;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -113,6 +119,7 @@ builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
 builder.Services.AddScoped<IValidator<EmployeeDto>, EmployeeValidator>();
 builder.Services.AddScoped<IValidator<PositionDto>, PositionValidator>();
+#endregion
 
 // === End Services Config.
 
