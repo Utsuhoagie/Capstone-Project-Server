@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.PositionModule;
 using Capstone.Responses.ExceptionHandling;
 using Microsoft.AspNetCore.Http.Features;
+using Capstone.Features.AttendanceModule;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +113,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IApplicantService, ApplicantService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
@@ -119,6 +121,7 @@ builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
 builder.Services.AddScoped<IValidator<EmployeeDto>, EmployeeValidator>();
 builder.Services.AddScoped<IValidator<PositionDto>, PositionValidator>();
+builder.Services.AddScoped<IValidator<AttendanceDto>, AttendanceValidator>();
 #endregion
 
 // === End Services Config.

@@ -4,6 +4,7 @@ using Capstone.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Capstone.Migrations
 {
     [DbContext(typeof(CapstoneContext))]
-    partial class CapstoneContextModelSnapshot : ModelSnapshot
+    [Migration("20230407075212_Add_Attendance_RelEmployeeAttendance")]
+    partial class Add_Attendance_RelEmployeeAttendance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,27 +35,21 @@ namespace Capstone.Migrations
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
-                    b.Property<string>("EndImageFileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("EndTimestamp")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("StartImageFileName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("StartTimestamp")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("StartTimestamp")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Attendances", (string)null);
+                    b.ToTable("Attendances");
                 });
 
             modelBuilder.Entity("Capstone.Models.EmployeeUser", b =>
@@ -177,7 +173,7 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("People", (string)null);
+                    b.ToTable("People");
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
@@ -196,7 +192,7 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Positions", (string)null);
+                    b.ToTable("Positions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

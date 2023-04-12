@@ -23,8 +23,8 @@ namespace Capstone.Features.Auth
 		private readonly UserManager<EmployeeUser> _userManager;
 		private readonly IValidator<RegisterRequest> _registerValidator;
 
-		private readonly int ACCESS_EXPIRY_MINUTES = 15;
-		private readonly int REFRESH_EXPIRY_MINUTES = 60;
+		private readonly int ACCESS_EXPIRY_MINUTES = 180;
+		private readonly int REFRESH_EXPIRY_MINUTES = 900;
 
 		public AuthService(
 			IConfiguration configuration,
@@ -39,7 +39,7 @@ namespace Capstone.Features.Auth
 		}
 
 		#region===== Auth internal methods ======
-		public string GenerateAccessToken(EmployeeUser user, string userRole)
+		public string GenerateAccessToken(EmployeeUser user, Employee? employee, string userRole)
 		{
 			var secretKey =
 				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetSection("Jwt:SecretKey").Value));
@@ -47,15 +47,25 @@ namespace Capstone.Features.Auth
 			var signingCredentials =
 				new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
+
 			var claims = new List<Claim>
 			{
 				new Claim(ClaimTypes.Name, user.Email),
 				new Claim(ClaimTypes.Email, user.Email),
 				new Claim(ClaimTypes.Role, userRole),
-				// these 2 claims are for easier FE usage, not used for BE
+
+				// these claims, including the added one below this block
+				// are not really used for BE,
+				// for easier FE usage
+				// for route params, or for checking on auth screen, etc
 				new Claim("Email", user.Email),
 				new Claim("Role", userRole)
 			};
+
+			if (employee != null)
+			{
+				claims.Add(new Claim("NationalId", employee.NationalId));
+			}
 
 			var accessSecurityToken = new JwtSecurityToken(
 				issuer: "https://localhost:5000",
@@ -196,7 +206,8 @@ namespace Capstone.Features.Auth
 			var newEmployeeUser = new EmployeeUser
 			{
 				UserName = req.Email,
-				Email = req.Email
+				Email = req.Email,
+				Employee = employee
 			};
 
 			var result = await _userManager.CreateAsync(newEmployeeUser, req.Password);
@@ -242,6 +253,26 @@ namespace Capstone.Features.Auth
 				};
 			}
 
+			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.User)
+				.FirstOrDefaultAsync(e => e.User == existingUser);
+
+			if (employee == null && existingUser.Email != "master@example.com")
+			{
+				return new AuthResponse
+				{
+					Status = HttpStatusCode.NotFound,
+					Errors = new List<IdentityError>
+					{
+						new IdentityError
+						{
+							Code = "Custom",
+							Description = ServiceErrors.NoEmployeeError,
+						}
+					}
+				};
+			}
+
 			var isUserValid = await _userManager.CheckPasswordAsync(existingUser, req.Password);
 
 			if (!isUserValid)
@@ -252,8 +283,10 @@ namespace Capstone.Features.Auth
 			var userRoles = await _userManager.GetRolesAsync(existingUser);
 			var userRole = userRoles.SingleOrDefault()!;
 
-			var accessToken = GenerateAccessToken(existingUser, userRole);
+			var accessToken = GenerateAccessToken(existingUser, employee, userRole);
 			var refreshToken = GenerateRefreshToken();
+
+
 
 			existingUser.RefreshToken = refreshToken;
 			existingUser.RefreshTokenExpiryTime = DateTime.Now.AddMinutes(REFRESH_EXPIRY_MINUTES);
@@ -279,12 +312,52 @@ namespace Capstone.Features.Auth
 			var user = await _userManager.FindByEmailAsync(userEmail);
 			var userRole = (await _userManager.GetRolesAsync(user)).SingleOrDefault();
 
+			var isUserNull = user == null;
+			var isRefreshTokenValid = refreshToken == user?.RefreshToken;
+			var isRefreshTokenExpired = user?.RefreshTokenExpiryTime <= DateTime.Now;
+
 			if (!IsRefreshValid(req, user) || userRole == null)
 			{
-				return new AuthResponse { Status = HttpStatusCode.BadRequest };
+				return new AuthResponse
+				{
+					Status = HttpStatusCode.BadRequest,
+					Errors = new List<IdentityError>
+					{
+						new IdentityError
+						{
+							Code = "Custom",
+							Description = 
+								$"isRefreshValid = {IsRefreshValid(req, user)} " +
+								$"| userRole = {userRole} " +
+								$"| isUserNull = {isUserNull}" +
+								$"| isRefreshTokenValid = {isRefreshTokenValid}" +
+								$"| isRefreshTokenExpired = {isRefreshTokenExpired}",
+						}
+					},
+				};
 			}
 
-			var newAccessToken = GenerateAccessToken(user, userRole);
+			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.User)
+				.FirstOrDefaultAsync(e => e.User == user);
+
+			if (employee == null &&	user.Email != "master@example.com")
+			{
+				return new AuthResponse
+				{
+					Status = HttpStatusCode.NotFound,
+					Errors = new List<IdentityError>
+					{
+						new IdentityError
+						{
+							Code = "Custom",
+							Description = ServiceErrors.NoEmployeeError,
+						}
+					}
+				};
+			}
+
+			var newAccessToken = GenerateAccessToken(user, employee, userRole);
 			var newRefreshToken = GenerateRefreshToken();
 
 			user.RefreshToken = newRefreshToken;

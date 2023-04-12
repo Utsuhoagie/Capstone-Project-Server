@@ -12,6 +12,11 @@
 		public static readonly string NoApplicantError = "Ứng viên không tồn tại.";
 		public static readonly string NoEmployeeError = "Nhân viên không tồn tại.";
 
+		public static readonly string NoAttendanceError = "Đợt chấm công không tồn tại.";
+		public static readonly string AttendanceNotEndedError = "Đợt chấm công chưa kết thúc.";
+		public static readonly string AttendanceAlreadyStartedError = "Đợt chấm công đã bắt đầu.";
+		public static readonly string AttendanceAlreadyEndedError = "Đợt chấm công đã kết thúc.";
+
 		public static readonly string DuplicatePositionError = "Vị trí đã tồn tại.";
 		public static readonly string NoPositionError = "Vị trí không tồn tại.";
 		public static readonly string PositionHasPeopleError = "Vị trí vẫn còn được sử dụng.";

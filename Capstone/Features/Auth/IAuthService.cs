@@ -6,7 +6,7 @@ namespace Capstone.Features.Auth
 {
     public interface IAuthService
 	{
-		string GenerateAccessToken(EmployeeUser user, string userRole);
+		string GenerateAccessToken(EmployeeUser user, Employee? employee, string userRole);
 
 		string GenerateRefreshToken();
 

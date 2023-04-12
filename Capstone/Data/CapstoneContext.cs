@@ -20,6 +20,8 @@ namespace Capstone.Data
 		//public DbSet<Applicant> Applicants { get; set; } = default!;
 		//public DbSet<Employee> Employees { get; set; } = default!;
 
+		public DbSet<Attendance> Attendances { get; set; } = default!;
+
 		public DbSet<Position> Positions { get; set; } = default!;
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -73,7 +75,13 @@ namespace Capstone.Data
 				.HasOne(e => e.User)
 				.WithOne(u => u.Employee)
 				.HasForeignKey<EmployeeUser>(u => u.EmployeeId);
-			
+
+			modelBuilder.Entity<Attendance>()
+				.HasOne(a => a.Employee)
+				.WithMany(e => e.Attendances)
+				.HasForeignKey(a => a.EmployeeId)
+				.IsRequired()
+				.OnDelete(DeleteBehavior.Cascade);
 		}
     }
 }
