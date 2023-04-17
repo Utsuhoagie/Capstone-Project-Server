@@ -8,8 +8,9 @@ namespace Capstone.Features.AttendanceModule
 {
     public interface IAttendanceService
     {
-		Task<string> GetDailyHash();
+		string GetDailyHash();
 		Task<PagedResult<AttendanceDto>> GetDailyAttendances(PagingParams pagingParams, DateOnly dateOnly);
+		Task<object> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly);
 		Task<ServiceResult> StartAttendance(StartAttendanceRequest req);
 		Task<ServiceResult> EndAttendance(EndAttendanceRequest req);
 		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);

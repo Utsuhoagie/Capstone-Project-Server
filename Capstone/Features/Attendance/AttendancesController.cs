@@ -26,14 +26,19 @@ namespace Capstone.Features.AttendanceModule
 		[Authorize]
 		public async Task<IActionResult> GetDailyHash()
 		{
-			return Ok(await _service.GetDailyHash());
+			var dailyHash = _service.GetDailyHash();
+			return Ok(dailyHash);
 		}
 
-		// GET: api/Attendances/Monthly?month=1
-		[HttpGet("Monthly")]
-		public async Task<IActionResult> GetMonthlyAttendances(int month)
+		// GET: api/Attendances/Monthly?date=2023-04-07T02:04:29.000Z
+		[HttpGet("DailyAttendanceStatusesOfMonth")]
+		public async Task<IActionResult> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date)
 		{
-			return Ok("");
+			var vnDate = date.AddHours(7);
+			DateOnly dateOnly = new DateOnly(vnDate.Year, vnDate.Month, vnDate.Day);
+			var monthAttendanceStatus = await _service.GetDailyAttendanceStatusesOfMonth(dateOnly);
+
+			return Ok(monthAttendanceStatus);
 		}
 
 		// GET: api/Attendances/Daily?page=1&pageSize=30&date=2023-04-07T02:04:29.000Z

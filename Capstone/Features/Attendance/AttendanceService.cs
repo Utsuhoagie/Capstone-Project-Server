@@ -7,8 +7,10 @@ using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Drawing.Drawing2D;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -27,7 +29,7 @@ namespace Capstone.Features.AttendanceModule
 			DANGEROUS_FILE_PATH = _configuration.GetSection("FilePath").Value;
 		}
 
-		public async Task<string> GetDailyHash()
+		public string GetDailyHash()
 		{
 			var secretString = _configuration.GetSection("JWT:SecretKey").Value;
 			var secretBytes = Encoding.UTF8.GetBytes(secretString);
@@ -46,6 +48,82 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			return sb.ToString();
+		}
+
+		
+		public async Task<object> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly)
+		{
+			var day = dateOnly.Day;
+			var month = dateOnly.Month;
+			var year = dateOnly.Year;
+
+			var attendancesInMonth = await _context.Attendances
+				.Where(a => a.StartTimestamp.Month == month && a.StartTimestamp.Year == year)
+				.ToListAsync();
+
+			var daysInMonth = DateTime.DaysInMonth(year, month);
+
+			var dailyStatusList = new List<DailyStatus>(
+				Enumerable.Repeat(DailyStatus.Empty, daysInMonth));
+			
+			for (int _day = 1; _day <= daysInMonth; _day++)
+			{
+				var attendancesInDate = attendancesInMonth
+					.Where(a => a.StartTimestamp.Day == _day);
+
+				if (attendancesInDate.Count() == 0)
+				{
+					continue;
+				}
+
+				var dailyStatus = attendancesInDate
+					.Any(a => a.Status == Status.Pending) ?
+						DailyStatus.Pending :
+						DailyStatus.Finished;
+
+				dailyStatusList[_day - 1] = dailyStatus;
+			}
+
+			return dailyStatusList;
+
+			// start client eval
+			var dailyAttendanceStatuses = attendancesInMonth
+				.GroupBy(a => a.StartTimestamp.Day)
+				.Select(grouping => grouping
+
+					// for each day group
+					// reduce from ARRAY of Attendances for 1 day
+					// to SINGLE DailyAttendanceStatus for 1 day
+					// e.g: get DailyAttendanceStatus for ALL attendances on March 4th
+					.Aggregate(
+						new DailyAttendanceStatus 
+						{ 
+							Day = grouping.Key, 
+							DailyStatus = DailyStatus.Finished,
+						},
+						(currentDailyAttendanceStatus, a) => 
+						new DailyAttendanceStatus
+						{
+							Day = currentDailyAttendanceStatus.Day,
+							DailyStatus = 
+								a.Status == Status.Pending ||
+								currentDailyAttendanceStatus.DailyStatus == DailyStatus.Pending 
+								? DailyStatus.Pending
+								: currentDailyAttendanceStatus.DailyStatus,
+						}
+					)
+				);
+
+			//if (attendancesInMonth.Count == 0 || dailyAttendanceStatus == null)
+			//{
+			//	return new DailyAttendanceStatus
+			//	{
+			//		Day = day,
+			//		DailyStatus = DailyStatus.Pending
+			//	};
+			//}
+
+			return dailyAttendanceStatuses;
 		}
 
 		public async Task<PagedResult<AttendanceDto>> GetDailyAttendances(
@@ -103,7 +181,7 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			// Check hash
-			var dailyHash = await GetDailyHash();
+			var dailyHash = GetDailyHash();
 			var isHashCorrect = req.QrHash == dailyHash;
 
 			// Check existing Attendance
@@ -171,7 +249,7 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			// Check hash
-			var dailyHash = await GetDailyHash();
+			var dailyHash = GetDailyHash();
 			var isHashCorrect = req.QrHash == dailyHash;
 
 			// Find existing Attendance,
