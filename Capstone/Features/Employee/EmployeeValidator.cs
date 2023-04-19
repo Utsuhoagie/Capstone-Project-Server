@@ -1,12 +1,12 @@
 ﻿using Capstone.Data;
 using Capstone.Responses.ExceptionHandling;
-using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
+using Capstone.Features.EmployeeModule.Models;
 
 namespace Capstone.Features.EmployeeModule
 {
-	public class EmployeeValidator: AbstractValidator<EmployeeDto>
+    public class EmployeeValidator: AbstractValidator<EmployeeRequest>
 	{
 		public EmployeeValidator() {
 			RuleFor(e => e.NationalId)
@@ -75,7 +75,7 @@ namespace Capstone.Features.EmployeeModule
 		}
 
 		protected override void RaiseValidationException(
-			ValidationContext<EmployeeDto> context, 
+			ValidationContext<EmployeeRequest> context, 
 			ValidationResult result)
 		{
 			throw new CustomValidationException(result.Errors);

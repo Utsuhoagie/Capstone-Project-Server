@@ -15,12 +15,12 @@ namespace Capstone.Features.File
 			_configuration = configuration;
 		}
 
-		[HttpGet("Image/{imageFileName}")]
-		public IActionResult GetImageFromFileName(string imageFileName)
+		[HttpGet("Image/{module}/{imageFileName}")]
+		public IActionResult GetImageFromFileName(string module, string imageFileName)
 		{
 			//var image = System.IO.
-			var DANGEROUS_PATH = _configuration.GetSection("FilePath").Value;
-			var safeFilePathName = Path.Combine(DANGEROUS_PATH, imageFileName);
+			var DANGEROUS_FILE_PATH = $"{_configuration.GetSection("FilePath").Value}\\{module}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, imageFileName);
 			var s = Path.ChangeExtension(safeFilePathName, "jpeg");
 			return PhysicalFile(s, "image/jpeg"); 
 		}

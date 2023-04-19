@@ -8,10 +8,4 @@ namespace Capstone.Features.AttendanceModule.Models
 		public int Day { get; set; }
 		public DailyStatus DailyStatus { get; set; }
 	}
-
-	public class MonthlyAttendanceStatuses
-	{
-		public int Month { get; set; }
-		public List<DailyAttendanceStatus> DailyAttendanceStatuses { get; set; } = new List<DailyAttendanceStatus>();
-	}
 }

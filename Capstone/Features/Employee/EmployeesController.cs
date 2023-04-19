@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
-using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.Auth;
 using Capstone.Responses.Pagination;
+using Capstone.Features.EmployeeModule.Models;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -26,9 +26,9 @@ namespace Capstone.Features.EmployeeModule
         }
 
 		// GET:
-		// api/Employee
+		// api/EmployeeModule
 		//				?page=1&pageSize=10
-		//				?SubName&Gender&Address&ExperienceYears&Position&EmployedDate&Salary
+		//				?SubName&Gender&Address&ExperienceYears&PositionModule&EmployedDate&Salary
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetEmployees(
@@ -59,56 +59,56 @@ namespace Capstone.Features.EmployeeModule
 				Salary = Salary
 			};
 
-			var employeeDtos = await _service
+			var pagedEmployeeResponses = await _service
 				.GetEmployees(pagingParams, filterParams);
 
-			return Ok(employeeDtos);
+			return Ok(pagedEmployeeResponses);
 		}
 
-		// GET: api/Employee/012012012
+		// GET: api/EmployeeModule/012012012
 		[HttpGet("{NationalId}")]
 		[Authorize]
-		public async Task<ActionResult<EmployeeDto>> GetEmployee([FromRoute] string NationalId)
+		public async Task<ActionResult<EmployeeRequest>> GetEmployee([FromRoute] string NationalId)
 		{
-			var employeeDto = await _service.GetEmployee(NationalId);
+			var res = await _service.GetEmployee(NationalId);
 
-			if (employeeDto == null)
+			if (res == null)
 			{
 				return NotFound();
 			}
 
-			return Ok(employeeDto);
+			return Ok(res);
 		}
 
-		// POST: api/Employee/Create
+		// POST: api/EmployeeModule/Create
 		[HttpPost("Create")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<ActionResult<EmployeeDto>> PostEmployee(EmployeeDto employeeDto)
+		public async Task<ActionResult<EmployeeRequest>> PostEmployee(EmployeeRequest employeeReq)
 		{
-			await _service.AddEmployee(employeeDto);
+			await _service.AddEmployee(employeeReq);
 
             return CreatedAtAction(
 				actionName: "GetEmployee", 
-				routeValues: new { NationalId = employeeDto.NationalId },
-				value: employeeDto
+				routeValues: new { NationalId = employeeReq.NationalId },
+				value: employeeReq
 			);
         }
 
-		// PUT: api/Employee/Update/012012012
+		// PUT: api/EmployeeModule/Update/012012012
 		[HttpPut("Update/{NationalId}")]
-		// NOTE, WIP: Employee can update itself, but NOT other Employees
+		// NOTE, WIP: EmployeeModule can update itself, but NOT other Employees
 		// check by current logged in user?
 		[Authorize]
 		public async Task<IActionResult> PutEmployee(
 			[FromRoute] string NationalId, 
-			[FromBody] EmployeeDto employeeDto)
+			[FromBody] EmployeeRequest employeeReq)
 		{
-			if (NationalId != employeeDto.NationalId)
+			if (NationalId != employeeReq.NationalId)
 			{
 				return BadRequest();
 			}
 
-			var result = await _service.UpdateEmployee(NationalId, employeeDto);
+			var result = await _service.UpdateEmployee(NationalId, employeeReq);
 
 			if (result.Success == false)
 			{
@@ -118,7 +118,7 @@ namespace Capstone.Features.EmployeeModule
 			return NoContent();
 		}
 
-		// DELETE: api/Employee/Delete/012012012
+		// DELETE: api/EmployeeModule/Delete/012012012
 		[HttpDelete("Delete/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> DeleteEmployee([FromRoute] string? NationalId)
@@ -139,6 +139,5 @@ namespace Capstone.Features.EmployeeModule
 
             return NoContent();
         }
-
     }
 }

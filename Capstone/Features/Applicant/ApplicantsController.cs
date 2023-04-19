@@ -6,12 +6,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
-using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Capstone.Responses.Pagination;
+using Capstone.Features.ApplicantModule.Models;
+using Capstone.Features.EmployeeModule.Models;
 
 namespace Capstone.Features.ApplicantModule
 {
@@ -29,7 +30,7 @@ namespace Capstone.Features.ApplicantModule
 		// GET:
 		// api/Applicants
 		//				?page=1&pageSize=10
-		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
+		//				?SubName&Gender&Address&ExperienceYears&PositionModule&AppliedDate&Salary
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetApplicants(
@@ -60,33 +61,34 @@ namespace Capstone.Features.ApplicantModule
 				AskingSalary = AskingSalary
 			};
 
-			var applicantDtos = await _service
+			var pagedApplicantResponses = await _service
 				.GetApplicants(pagingParams, filterParams);
 
-			return Ok(applicantDtos);
+			return Ok(pagedApplicantResponses);
 		}
 
 		// GET: api/Applicants/012012012
 		[HttpGet("{NationalId}")]
 		[Authorize]
-		public async Task<ActionResult<ApplicantDto>> GetApplicant([FromRoute] string NationalId)
+		public async Task<ActionResult<ApplicantRequest>> GetApplicant([FromRoute] string NationalId)
 		{
-			var applicantDto = await _service.GetApplicant(NationalId);
+			var res = await _service.GetApplicant(NationalId);
 
-			if (applicantDto == null)
+			if (res == null)
 			{
 				return NotFound();
 			}
 
-			return Ok(applicantDto);
+			return Ok(res);
 		}
 
 		// POST: api/Applicants/Create
 		[HttpPost("Create")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<ActionResult<ApplicantDto>> PostApplicant(ApplicantDto applicantDto)
+		[Consumes("multipart/form-data")]
+		public async Task<ActionResult<ApplicantRequest>> PostApplicant([FromForm] ApplicantRequest applicantReq)
 		{
-			var result = await _service.AddApplicant(applicantDto);
+			var result = await _service.AddApplicant(applicantReq);
 
 			if (result.Success == false)
 			{
@@ -95,8 +97,8 @@ namespace Capstone.Features.ApplicantModule
 
             return CreatedAtAction(
 				actionName: "GetApplicant", 
-				routeValues: new { NationalId = applicantDto.NationalId },
-				value: applicantDto
+				routeValues: new { NationalId = applicantReq.NationalId },
+				value: applicantReq
 			);
         }
 
@@ -105,14 +107,14 @@ namespace Capstone.Features.ApplicantModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> PutApplicant(
 			[FromRoute] string NationalId, 
-			[FromBody] ApplicantDto applicantDto)
+			[FromBody] ApplicantRequest applicantReq)
 		{
-			if (NationalId != applicantDto.NationalId)
+			if (NationalId != applicantReq.NationalId)
 			{
 				return BadRequest();
 			}
 
-			var result = await _service.UpdateApplicant(NationalId, applicantDto);
+			var result = await _service.UpdateApplicant(NationalId, applicantReq);
 
 			if (result.Success == false)
 			{
@@ -149,9 +151,9 @@ namespace Capstone.Features.ApplicantModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> EmployApplicant(
 			[FromRoute] string NationalId,
-			[FromBody] EmployeeDto employeeDto)
+			[FromBody] EmployeeRequest employeeReq)
 		{
-			var result = await _service.EmployApplicant(NationalId, employeeDto);
+			var result = await _service.EmployApplicant(NationalId, employeeReq);
 
 			if (result.Success == false)
 			{

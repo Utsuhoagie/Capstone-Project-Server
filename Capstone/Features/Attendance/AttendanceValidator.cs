@@ -1,12 +1,12 @@
 ﻿using Capstone.Data;
 using Capstone.Responses.ExceptionHandling;
-using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
+using Capstone.Features.AttendanceModule.Models;
 
 namespace Capstone.Features.AttendanceModule
 {
-	public class AttendanceValidator: AbstractValidator<AttendanceDto>
+    public class AttendanceValidator: AbstractValidator<AttendanceRequest>
 	{
 		public AttendanceValidator() {
 			/*RuleFor(a => a.NationalId)
@@ -15,7 +15,7 @@ namespace Capstone.Features.AttendanceModule
 				.WithMessage("Số CMND/CCCD chỉ có thể có 9 hoặc 12 số.");
 			//.Must(n =>
 			//{
-			//	var duplicateApplicant = _context.People.OfType<Applicant>()
+			//	var duplicateApplicant = _context.People.OfType<ApplicantModule>()
 			//		.FirstOrDefault(a => a.NationalId == n);
 
 			//	return duplicateApplicant == null;
@@ -66,7 +66,7 @@ namespace Capstone.Features.AttendanceModule
 		}
 
 		protected override void RaiseValidationException(
-			ValidationContext<AttendanceDto> context, 
+			ValidationContext<AttendanceRequest> context, 
 			ValidationResult result)
 		{
 			throw new CustomValidationException(result.Errors);

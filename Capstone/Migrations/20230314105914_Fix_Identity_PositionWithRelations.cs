@@ -209,7 +209,7 @@ namespace Capstone.Migrations
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[] { "31fffc05-9fb9-4050-b94a-6afbb998b955", "944c748e-19f6-4494-bfa9-f1468eb24afd", "Employee", "EMPLOYEE" });
+                values: new object[] { "31fffc05-9fb9-4050-b94a-6afbb998b955", "944c748e-19f6-4494-bfa9-f1468eb24afd", "EmployeeModule", "EMPLOYEE" });
 
             migrationBuilder.InsertData(
                 table: "AspNetRoles",

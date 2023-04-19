@@ -1,12 +1,12 @@
 ﻿using Capstone.Data;
 using Capstone.Responses.ExceptionHandling;
-using Capstone.Models;
 using FluentValidation;
 using FluentValidation.Results;
+using Capstone.Features.PositionModule.Models;
 
 namespace Capstone.Features.PositionModule
 {
-	public class PositionValidator: AbstractValidator<PositionDto>
+    public class PositionValidator: AbstractValidator<PositionRequest>
 	{
 		public PositionValidator() {
 			RuleFor(a => a.Name)
@@ -17,7 +17,7 @@ namespace Capstone.Features.PositionModule
 		}
 
 		protected override void RaiseValidationException(
-			ValidationContext<PositionDto> context, 
+			ValidationContext<PositionRequest> context, 
 			ValidationResult result)
 		{
 			throw new CustomValidationException(result.Errors);

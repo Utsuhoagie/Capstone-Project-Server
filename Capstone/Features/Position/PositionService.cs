@@ -1,6 +1,5 @@
 ﻿using Capstone.Data;
 using Capstone.Responses.ExceptionHandling;
-using Capstone.Models;
 using Capstone.Responses.Pagination;
 using FluentValidation;
 using FluentValidation.Results;
@@ -9,28 +8,40 @@ using Microsoft.EntityFrameworkCore;
 using System.Net;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
+using Capstone.Features.PositionModule.Models;
 
 namespace Capstone.Features.PositionModule
 {
-    public class PositionService : IPositionService
+	public interface IPositionService
+	{
+		Task<PagedResult<PositionResponse>> GetAllPositions();
+		Task<PagedResult<PositionResponse>> GetPositions(PagingParams pagingParams);
+		Task<PositionResponse?> GetPosition(string Name);
+		Task<ServiceResult> AddPosition(PositionRequest req);
+		Task<ServiceResult> UpdatePosition(string Name, PositionRequest req);
+		Task<ServiceResult> DeleteAllPositions();
+		Task<ServiceResult> DeletePosition(string Name);
+	}
+
+	public class PositionService : IPositionService
     {
         private readonly CapstoneContext _context;
-		private readonly IValidator<PositionDto> _validator;
+		private readonly IValidator<PositionRequest> _validator;
 
 		public PositionService(
 			CapstoneContext capstoneContext, 
-			IValidator<PositionDto> validator)
+			IValidator<PositionRequest> validator)
         {
             _context = capstoneContext;
 			_validator = validator;
         }
 
-		public async Task<PagedResult<PositionDto>> GetAllPositions()
+		public async Task<PagedResult<PositionResponse>> GetAllPositions()
 		{
 			var positions = await _context.Positions
 				.Include(p => p.Applicants)
 				.Include(p => p.Employees)
-				.Select(p => new PositionDto
+				.Select(p => new PositionResponse
 				{
 					Name = p.Name,
 					ApplicantCount = p.Applicants.Count(),
@@ -40,39 +51,39 @@ namespace Capstone.Features.PositionModule
 
 			var totalCount = await _context.Positions.CountAsync();
 
-			return new PagedResult<PositionDto>(positions, totalCount, 1);
+			return new PagedResult<PositionResponse>(positions, totalCount, 1);
 		}
 
-		public async Task<PagedResult<PositionDto>> GetPositions(PagingParams pagingParams)
+		public async Task<PagedResult<PositionResponse>> GetPositions(PagingParams pagingParams)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
-			var queryableFilteredPositionDtos = _context.Positions
+			var queryableFilteredPositionResponses = _context.Positions
 				.Include(p => p.Applicants)
 				.Include(p => p.Employees)
-				.Select(p => new PositionDto
+				.Select(p => new PositionResponse
 				{
 					Name = p.Name,
 					ApplicantCount = p.Applicants.Count(),
 					EmployeeCount = p.Employees.Count(),
 				});
 
-			var pagedPositionDtos = await queryableFilteredPositionDtos
+			var pagedPositionResponses = await queryableFilteredPositionResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			var totalCount = await queryableFilteredPositionDtos.CountAsync();
+			var totalCount = await queryableFilteredPositionResponses.CountAsync();
 
-			return new PagedResult<PositionDto>(
-				items: pagedPositionDtos,
+			return new PagedResult<PositionResponse>(
+				items: pagedPositionResponses,
 				totalCount: totalCount,
 				page: page,
 				pageSize: pageSize);
 		}
 
-		public async Task<PositionDto?> GetPosition(string Name)
+		public async Task<PositionResponse?> GetPosition(string Name)
 		{
 			var position = await _context.Positions
 				.Include(p => p.Applicants)
@@ -84,7 +95,7 @@ namespace Capstone.Features.PositionModule
 				return null;
 			}
 
-			return new PositionDto
+			return new PositionResponse
 			{
 				Name = position.Name,
 				ApplicantCount = position.Applicants.Count(),
@@ -92,12 +103,12 @@ namespace Capstone.Features.PositionModule
 			};
 		}
 
-		public async Task<ServiceResult> AddPosition(PositionDto positionDto)
+		public async Task<ServiceResult> AddPosition(PositionRequest req)
 		{
-			await _validator.ValidateAndThrowAsync(positionDto);
+			await _validator.ValidateAndThrowAsync(req);
 
 			var duplicatePosition = await _context.Positions
-				.SingleOrDefaultAsync(p => p.Name == positionDto.Name);
+				.SingleOrDefaultAsync(p => p.Name == req.Name);
 
 			if (duplicatePosition != null)
 			{
@@ -110,7 +121,7 @@ namespace Capstone.Features.PositionModule
 
 			var position = new Position
 			{
-				Name = positionDto.Name,
+				Name = req.Name,
 			};
 			await _context.Positions.AddAsync(position);
 			await _context.SaveChangesAsync();
@@ -121,7 +132,7 @@ namespace Capstone.Features.PositionModule
 			};
 		}
 
-		public async Task<ServiceResult> UpdatePosition(string Name, PositionDto positionDto)
+		public async Task<ServiceResult> UpdatePosition(string Name, PositionRequest req)
 		{
 			var position = await _context.Positions
 				.SingleOrDefaultAsync(p => p.Name == Name);
@@ -136,7 +147,7 @@ namespace Capstone.Features.PositionModule
 			}
 
 			var duplicatePosition = await _context.Positions
-				.SingleOrDefaultAsync(p => p.Name == positionDto.Name);
+				.SingleOrDefaultAsync(p => p.Name == req.Name);
 
 			if (duplicatePosition != null)
 			{
@@ -147,7 +158,7 @@ namespace Capstone.Features.PositionModule
 				};
 			}
 
-			position.Name = positionDto.Name;
+			position.Name = req.Name;
 
 			await _context.SaveChangesAsync();
 

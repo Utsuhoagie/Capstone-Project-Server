@@ -1,6 +1,6 @@
 ﻿using Capstone.Data;
 using Capstone.Features.Auth.Models;
-using Capstone.Models;
+using Capstone.Features.EmployeeModule.Models;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
 using FluentValidation;
@@ -16,6 +16,17 @@ using System.Text;
 
 namespace Capstone.Features.Auth
 {
+    public interface IAuthService
+	{
+		string GenerateAccessToken(EmployeeUser user, Employee? employee, string userRole);
+		string GenerateRefreshToken();
+		Task<AuthResponse> RegisterEmployee(RegisterEmployeeRequest req);
+		Task<AuthResponse> Login(LoginRequest req);
+		Task<AuthResponse> Refresh(RefreshRequest req);
+		Task<AuthResponse> DEBUG_REGISTER(RegisterRequest req);
+		Task<ServiceResult> DEBUG_DELETE(string email);
+	}
+
 	public class AuthService : IAuthService
 	{
 		private readonly IConfiguration _configuration;

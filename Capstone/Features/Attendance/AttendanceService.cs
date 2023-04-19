@@ -1,7 +1,8 @@
 ﻿using Capstone.Data;
 using Capstone.Features.AttendanceModule.Models;
+using Capstone.Features.AttendanceModule.Models;
+using Capstone.Features.EmployeeModule.Models;
 using Capstone.Features.File;
-using Capstone.Models;
 using Capstone.Responses.Pagination;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
@@ -16,7 +17,27 @@ using System.Text;
 
 namespace Capstone.Features.AttendanceModule
 {
-    public class AttendanceService: IAttendanceService
+	public interface IAttendanceService
+	{
+		string GetDailyHash();
+		Task<PagedResult<AttendanceResponse>> GetDailyAttendances(PagingParams pagingParams, DateOnly dateOnly);
+		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly);
+		Task<ServiceResult> StartAttendance(StartAttendanceRequest req);
+		Task<ServiceResult> EndAttendance(EndAttendanceRequest req);
+		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);
+
+		//Task<PagedResult<ApplicantRequest>> GetApplicants(PagingParams pagingParams, ApplicantFilterParams filterParams);
+
+		//Task<ApplicantRequest?> GetApplicant(string NationalId);
+
+		//Task<ServiceResult> DeleteApplicant(string NationalId);
+
+		//Task<ServiceResult> EmployApplicant(string NationalId, EmployeeRequest employeeDto);
+
+		Task<ServiceResult> DEBUG_DELETE();
+	}
+
+	public class AttendanceService: IAttendanceService
 	{
 		private readonly CapstoneContext _context;
 		private readonly IConfiguration _configuration;
@@ -26,7 +47,7 @@ namespace Capstone.Features.AttendanceModule
 		{
 			_context = context;
 			_configuration = configuration;
-			DANGEROUS_FILE_PATH = _configuration.GetSection("FilePath").Value;
+			DANGEROUS_FILE_PATH = $"{_configuration.GetSection("FilePath").Value}\\Attendances";
 		}
 
 		public string GetDailyHash()
@@ -51,7 +72,7 @@ namespace Capstone.Features.AttendanceModule
 		}
 
 		
-		public async Task<object> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly)
+		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly)
 		{
 			var day = dateOnly.Day;
 			var month = dateOnly.Month;
@@ -85,62 +106,23 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			return dailyStatusList;
-
-			// start client eval
-			var dailyAttendanceStatuses = attendancesInMonth
-				.GroupBy(a => a.StartTimestamp.Day)
-				.Select(grouping => grouping
-
-					// for each day group
-					// reduce from ARRAY of Attendances for 1 day
-					// to SINGLE DailyAttendanceStatus for 1 day
-					// e.g: get DailyAttendanceStatus for ALL attendances on March 4th
-					.Aggregate(
-						new DailyAttendanceStatus 
-						{ 
-							Day = grouping.Key, 
-							DailyStatus = DailyStatus.Finished,
-						},
-						(currentDailyAttendanceStatus, a) => 
-						new DailyAttendanceStatus
-						{
-							Day = currentDailyAttendanceStatus.Day,
-							DailyStatus = 
-								a.Status == Status.Pending ||
-								currentDailyAttendanceStatus.DailyStatus == DailyStatus.Pending 
-								? DailyStatus.Pending
-								: currentDailyAttendanceStatus.DailyStatus,
-						}
-					)
-				);
-
-			//if (attendancesInMonth.Count == 0 || dailyAttendanceStatus == null)
-			//{
-			//	return new DailyAttendanceStatus
-			//	{
-			//		Day = day,
-			//		DailyStatus = DailyStatus.Pending
-			//	};
-			//}
-
-			return dailyAttendanceStatuses;
 		}
 
-		public async Task<PagedResult<AttendanceDto>> GetDailyAttendances(
+		public async Task<PagedResult<AttendanceResponse>> GetDailyAttendances(
 			PagingParams pagingParams, 
 			DateOnly dateOnly)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
-			var queryableDailyAttendanceDtos = _context.Attendances
+			var queryableDailyAttendanceResponses = _context.Attendances
 				.Include(a => a.Employee)
 				.Where(a => 
 					a.StartTimestamp.Day == dateOnly.Day && 
 					a.StartTimestamp.Month == dateOnly.Month &&
 					a.StartTimestamp.Year == dateOnly.Year
 				)
-				.Select(a => new AttendanceDto
+				.Select(a => new AttendanceResponse
 				{
 					EmployeeFullName = a.Employee.FullName,
 					EmployeeNationalId = a.Employee.NationalId,
@@ -151,15 +133,15 @@ namespace Capstone.Features.AttendanceModule
 					EndImageFileName = a.EndImageFileName,
 				});
 
-			var totalCount = await queryableDailyAttendanceDtos.CountAsync();
+			var totalCount = await queryableDailyAttendanceResponses.CountAsync();
 
-			var pagedAttendanceDtos = queryableDailyAttendanceDtos
+			var pagedAttendanceResponses = queryableDailyAttendanceResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToList();
 
-			return new PagedResult<AttendanceDto>(
-				items: pagedAttendanceDtos,
+			return new PagedResult<AttendanceResponse>(
+				items: pagedAttendanceResponses,
 				totalCount: totalCount,
 				page: page,
 				pageSize: pageSize);
@@ -184,7 +166,7 @@ namespace Capstone.Features.AttendanceModule
 			var dailyHash = GetDailyHash();
 			var isHashCorrect = req.QrHash == dailyHash;
 
-			// Check existing Attendance
+			// Check existing AttendanceModule
 			var existingAttendance = await _context.Attendances
 				.Include(a => a.Employee)
 				.FirstOrDefaultAsync(a => a.Employee.NationalId == req.EmployeeNationalId 
@@ -202,7 +184,6 @@ namespace Capstone.Features.AttendanceModule
 			// Upload file
 			var startImage = req.StartImage;
 			var startT = req.StartTimestamp;
-			//var safeFileName = Path.GetRandomFileName();
 			var safeFileNameTimestamp =
 				$"{startT.Day}-{startT.Month}-{startT.Year}_{startT.Hour}-{startT.Minute}";
 			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}";
@@ -252,7 +233,7 @@ namespace Capstone.Features.AttendanceModule
 			var dailyHash = GetDailyHash();
 			var isHashCorrect = req.QrHash == dailyHash;
 
-			// Find existing Attendance,
+			// Find existing AttendanceModule,
 			// which should only has Start
 			// should have same Date (no time)
 			var attendance = await _context.Attendances

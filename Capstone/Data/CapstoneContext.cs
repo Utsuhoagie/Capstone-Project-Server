@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using Capstone.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Capstone.Features.ApplicantModule.Models;
+using Capstone.Features.AttendanceModule.Models;
+using Capstone.Features.EmployeeModule.Models;
+using Capstone.Features.PositionModule.Models;
+using Capstone.Features.Auth.Models;
 
 namespace Capstone.Data
 {
@@ -17,8 +22,8 @@ namespace Capstone.Data
         }
 
 		public DbSet<Person> People { get; set; } = default!;
-		//public DbSet<Applicant> Applicants { get; set; } = default!;
-		//public DbSet<Employee> Employees { get; set; } = default!;
+		//public DbSet<ApplicantModule> Applicants { get; set; } = default!;
+		//public DbSet<EmployeeModule> Employees { get; set; } = default!;
 
 		public DbSet<Attendance> Attendances { get; set; } = default!;
 
@@ -34,7 +39,7 @@ namespace Capstone.Data
 				new IdentityRole
 				{
 					Id = "2f89c3c2-0e18-4919-9ee5-136ccb50f78a",
-					Name = "Employee",
+					Name = "EmployeeModule",
 					NormalizedName = "EMPLOYEE",
 					ConcurrencyStamp = "4b63da43-5bed-4afa-b24b-6cf71eb4f44a",
 				},
@@ -66,7 +71,7 @@ namespace Capstone.Data
 				.Property(e => e.EmployedDate)
 				.HasColumnType("datetimeoffset");
 			modelBuilder.Entity<Employee>()
-				.HasOne(e => e.Position)
+				.HasOne<Position>(e => e.Position)
 				.WithMany(p => p.Employees)
 				.HasForeignKey(e => e.PositionId)
 				.IsRequired()
@@ -77,7 +82,7 @@ namespace Capstone.Data
 				.HasForeignKey<EmployeeUser>(u => u.EmployeeId);
 
 			modelBuilder.Entity<Attendance>()
-				.HasOne(a => a.Employee)
+				.HasOne<Employee>(a => a.Employee)
 				.WithMany(e => e.Attendances)
 				.HasForeignKey(a => a.EmployeeId)
 				.IsRequired()

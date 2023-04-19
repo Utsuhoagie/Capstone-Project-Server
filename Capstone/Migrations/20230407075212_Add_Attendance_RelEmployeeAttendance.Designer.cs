@@ -24,7 +24,7 @@ namespace Capstone.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("Capstone.Models.Attendance", b =>
+            modelBuilder.Entity("Capstone.Models.AttendanceModule", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -178,7 +178,7 @@ namespace Capstone.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Position", b =>
+            modelBuilder.Entity("Capstone.Models.PositionModule", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -226,7 +226,7 @@ namespace Capstone.Migrations
                         {
                             Id = "2f89c3c2-0e18-4919-9ee5-136ccb50f78a",
                             ConcurrencyStamp = "4b63da43-5bed-4afa-b24b-6cf71eb4f44a",
-                            Name = "Employee",
+                            Name = "EmployeeModule",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
@@ -344,7 +344,7 @@ namespace Capstone.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Capstone.Models.Applicant", b =>
+            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
                 {
                     b.HasBaseType("Capstone.Models.Person");
 
@@ -359,10 +359,10 @@ namespace Capstone.Migrations
 
                     b.HasIndex("AppliedPositionId");
 
-                    b.HasDiscriminator().HasValue("Applicant");
+                    b.HasDiscriminator().HasValue("ApplicantModule");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Employee", b =>
+            modelBuilder.Entity("Capstone.Models.EmployeeModule", b =>
                 {
                     b.HasBaseType("Capstone.Models.Person");
 
@@ -383,27 +383,27 @@ namespace Capstone.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.HasDiscriminator().HasValue("Employee");
+                    b.HasDiscriminator().HasValue("EmployeeModule");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Attendance", b =>
+            modelBuilder.Entity("Capstone.Models.AttendanceModule", b =>
                 {
-                    b.HasOne("Capstone.Models.Employee", "Employee")
+                    b.HasOne("Capstone.Models.EmployeeModule", "EmployeeModule")
                         .WithMany("Attendances")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Employee");
+                    b.Navigation("EmployeeModule");
                 });
 
             modelBuilder.Entity("Capstone.Models.EmployeeUser", b =>
                 {
-                    b.HasOne("Capstone.Models.Employee", "Employee")
+                    b.HasOne("Capstone.Models.EmployeeModule", "EmployeeModule")
                         .WithOne("User")
                         .HasForeignKey("Capstone.Models.EmployeeUser", "EmployeeId");
 
-                    b.Navigation("Employee");
+                    b.Navigation("EmployeeModule");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -457,9 +457,9 @@ namespace Capstone.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Capstone.Models.Applicant", b =>
+            modelBuilder.Entity("Capstone.Models.ApplicantModule", b =>
                 {
-                    b.HasOne("Capstone.Models.Position", "AppliedPosition")
+                    b.HasOne("Capstone.Models.PositionModule", "AppliedPosition")
                         .WithMany("Applicants")
                         .HasForeignKey("AppliedPositionId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -468,25 +468,25 @@ namespace Capstone.Migrations
                     b.Navigation("AppliedPosition");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Employee", b =>
+            modelBuilder.Entity("Capstone.Models.EmployeeModule", b =>
                 {
-                    b.HasOne("Capstone.Models.Position", "Position")
+                    b.HasOne("Capstone.Models.PositionModule", "PositionModule")
                         .WithMany("Employees")
                         .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Position");
+                    b.Navigation("PositionModule");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Position", b =>
+            modelBuilder.Entity("Capstone.Models.PositionModule", b =>
                 {
                     b.Navigation("Applicants");
 
                     b.Navigation("Employees");
                 });
 
-            modelBuilder.Entity("Capstone.Models.Employee", b =>
+            modelBuilder.Entity("Capstone.Models.EmployeeModule", b =>
                 {
                     b.Navigation("Attendances");
 

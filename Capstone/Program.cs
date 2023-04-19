@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using FluentValidation;
 using Capstone.Data;
-using Capstone.Models;
 using Capstone.Features;
 using Capstone.Features.ApplicantModule;
 using Capstone.Features.EmployeeModule;
@@ -19,6 +18,10 @@ using Capstone.Features.PositionModule;
 using Capstone.Responses.ExceptionHandling;
 using Microsoft.AspNetCore.Http.Features;
 using Capstone.Features.AttendanceModule;
+using Capstone.Features.ApplicantModule.Models;
+using Capstone.Features.AttendanceModule.Models;
+using Capstone.Features.EmployeeModule.Models;
+using Capstone.Features.PositionModule.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -118,10 +121,10 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
-builder.Services.AddScoped<IValidator<ApplicantDto>, ApplicantValidator>();
-builder.Services.AddScoped<IValidator<EmployeeDto>, EmployeeValidator>();
-builder.Services.AddScoped<IValidator<PositionDto>, PositionValidator>();
-builder.Services.AddScoped<IValidator<AttendanceDto>, AttendanceValidator>();
+builder.Services.AddScoped<IValidator<ApplicantRequest>, ApplicantValidator>();
+builder.Services.AddScoped<IValidator<EmployeeRequest>, EmployeeValidator>();
+builder.Services.AddScoped<IValidator<PositionRequest>, PositionValidator>();
+builder.Services.AddScoped<IValidator<AttendanceRequest>, AttendanceValidator>();
 #endregion
 
 // === End Services Config.

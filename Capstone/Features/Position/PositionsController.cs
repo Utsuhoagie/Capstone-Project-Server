@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Capstone.Data;
-using Capstone.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Capstone.Features.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Capstone.Responses.Pagination;
+using Capstone.Features.PositionModule.Models;
 
 namespace Capstone.Features.PositionModule
 {
@@ -29,7 +29,7 @@ namespace Capstone.Features.PositionModule
 		// GET:
 		// api/Positions
 		//				?page=1&pageSize=10
-		//				?SubName&Gender&Address&ExperienceYears&Position&AppliedDate&Salary
+		//				?SubName&Gender&Address&ExperienceYears&PositionModule&AppliedDate&Salary
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetPositions(int? page, int? pageSize)
@@ -55,24 +55,24 @@ namespace Capstone.Features.PositionModule
 		// GET: api/Positions/HR
 		[HttpGet("{Name}")]
 		[Authorize]
-		public async Task<ActionResult<PositionDto>> GetPosition([FromRoute] string Name)
+		public async Task<ActionResult<PositionResponse>> GetPosition([FromRoute] string Name)
 		{
-			var positionDto = await _service.GetPosition(Name);
+			var res = await _service.GetPosition(Name);
 
-			if (positionDto == null)
+			if (res == null)
 			{
 				return NotFound();
 			}
 
-			return Ok(positionDto);
+			return Ok(res);
 		}
 
 		// POST: api/Positions/Create
 		[HttpPost("Create")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<ActionResult<PositionDto>> PostPosition(PositionDto positionDto)
+		public async Task<ActionResult<PositionResponse>> PostPosition(PositionRequest req)
 		{
-			var result = await _service.AddPosition(positionDto);
+			var result = await _service.AddPosition(req);
 
 			if (result.Success == false)
 			{
@@ -81,8 +81,8 @@ namespace Capstone.Features.PositionModule
 
             return CreatedAtAction(
 				actionName: "GetPosition", 
-				routeValues: new { Name = positionDto.Name },
-				value: positionDto
+				routeValues: new { Name = req.Name },
+				value: req
 			);
         }
 
@@ -91,14 +91,14 @@ namespace Capstone.Features.PositionModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> PutPosition(
 			[FromRoute] string Name, 
-			[FromBody] PositionDto positionDto)
+			[FromBody] PositionRequest req)
 		{
-			//if (Name != positionDto.Name)
+			//if (Name != positionRes.Name)
 			//{
 			//	return BadRequest();
 			//}
 
-			var result = await _service.UpdatePosition(Name, positionDto);
+			var result = await _service.UpdatePosition(Name, req);
 
 			if (result.Success == false)
 			{
