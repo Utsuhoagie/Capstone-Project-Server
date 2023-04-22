@@ -8,6 +8,8 @@
 		public static readonly string PasswordsDontMatchError = "Mật khẩu không trùng khớp.";
 
 		// App Errors
+		public static readonly string StartAfterEndDateError = "Thời gian bắt đầu phải trước thời gian kết thúc.";
+
 		public static readonly string DuplicatePersonError = "Số CMND/CCCD đã tồn tại.";
 		public static readonly string NoApplicantError = "Ứng viên không tồn tại.";
 		public static readonly string NoEmployeeError = "Nhân viên không tồn tại.";
@@ -16,6 +18,8 @@
 		public static readonly string AttendanceNotEndedError = "Đợt chấm công chưa kết thúc.";
 		public static readonly string AttendanceAlreadyStartedError = "Đợt chấm công đã bắt đầu.";
 		public static readonly string AttendanceAlreadyEndedError = "Đợt chấm công đã kết thúc.";
+
+		public static readonly string EmployeeOnLeaveError = "Nhân viên đang nghỉ phép.";
 
 		public static readonly string DuplicatePositionError = "Vị trí đã tồn tại.";
 		public static readonly string NoPositionError = "Vị trí không tồn tại.";

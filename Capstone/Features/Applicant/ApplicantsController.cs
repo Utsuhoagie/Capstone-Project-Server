@@ -36,7 +36,7 @@ namespace Capstone.Features.ApplicantModule
 		public async Task<IActionResult> GetApplicants(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
-			string? AppliedPosition, DateTimeOffset? AppliedDateFrom, DateTimeOffset? AppliedDateTo, int? AskingSalary)
+			string? AppliedPosition, DateTime? AppliedDateFrom, DateTimeOffset? AppliedDateTo, int? AskingSalary)
 		{
 			if (page == null || pageSize == null)
 			{

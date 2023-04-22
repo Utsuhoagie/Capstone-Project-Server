@@ -14,17 +14,22 @@ using Microsoft.IdentityModel.Tokens;
 using System.Drawing.Drawing2D;
 using System.Security.Cryptography;
 using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Capstone.Features.AttendanceModule
 {
 	public interface IAttendanceService
 	{
+		// ==== Web ====
 		string GetDailyHash();
-		Task<PagedResult<AttendanceResponse>> GetDailyAttendances(PagingParams pagingParams, DateOnly dateOnly);
-		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly);
+		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date);
+		Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(PagingParams pagingParams, DateTimeOffset date);
+		Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date);
+		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);
+
+		// ==== Mobile ====
 		Task<ServiceResult> StartAttendance(StartAttendanceRequest req);
 		Task<ServiceResult> EndAttendance(EndAttendanceRequest req);
-		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);
 
 		//Task<PagedResult<ApplicantRequest>> GetApplicants(PagingParams pagingParams, ApplicantFilterParams filterParams);
 
@@ -50,6 +55,7 @@ namespace Capstone.Features.AttendanceModule
 			DANGEROUS_FILE_PATH = $"{_configuration.GetSection("FilePath").Value}\\Attendances";
 		}
 
+		#region==== Web ====
 		public string GetDailyHash()
 		{
 			var secretString = _configuration.GetSection("JWT:SecretKey").Value;
@@ -72,11 +78,11 @@ namespace Capstone.Features.AttendanceModule
 		}
 
 		
-		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateOnly dateOnly)
+		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date)
 		{
-			var day = dateOnly.Day;
-			var month = dateOnly.Month;
-			var year = dateOnly.Year;
+			var day = date.Day;
+			var month = date.Month;
+			var year = date.Year;
 
 			var attendancesInMonth = await _context.Attendances
 				.Where(a => a.StartTimestamp.Month == month && a.StartTimestamp.Year == year)
@@ -108,19 +114,31 @@ namespace Capstone.Features.AttendanceModule
 			return dailyStatusList;
 		}
 
-		public async Task<PagedResult<AttendanceResponse>> GetDailyAttendances(
-			PagingParams pagingParams, 
-			DateOnly dateOnly)
+/*		public async Task<List<EmployeeResponse>> GetEmployeesNotOnLeave(
+			PagingParams pagingParams, DateTimeOffset date)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
-			var queryableDailyAttendanceResponses = _context.Attendances
-				.Include(a => a.Employee)
-				.Where(a => 
-					a.StartTimestamp.Day == dateOnly.Day && 
-					a.StartTimestamp.Month == dateOnly.Month &&
-					a.StartTimestamp.Year == dateOnly.Year
+			var clievalEmployeeResponses = _context.People.OfType<Employee>()
+				.Include(e => e.Attendances)
+				.Include(e => e.Leaves)
+
+				// Only include Attendances where the Employee has no Leave
+				//.Where(a => a.Employee.Leaves
+				//	.Any(l => 
+				//		(l.StartDate.Date >= date) ))
+				.Where(e => e.NationalId == )
+				.Where(a => (
+				// a.StartTimestamp is +0:00 time, correct time but with diff offset
+				// date is +0:00 time, correct time but with diff offset
+				// have to compare and check for "Same Day"
+				// a.StartTimestamp is between [17:00 day1, 16:59 day2]
+					a.StartTimestamp.AddHours(7).Date == vnDate.Date
+					)
+				//(a.StartTimestamp.Day == date.Day) && 
+				//(a.StartTimestamp.Month == date.Month) &&
+				//(a.StartTimestamp.Year == date.Year)
 				)
 				.Select(a => new AttendanceResponse
 				{
@@ -145,8 +163,185 @@ namespace Capstone.Features.AttendanceModule
 				totalCount: totalCount,
 				page: page,
 				pageSize: pageSize);
+		}*/
+
+		public async Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(
+			PagingParams pagingParams, DateTimeOffset date)
+		{
+			var page = pagingParams.Page;
+			var pageSize = pagingParams.PageSize;
+
+			//var debug = _context.People.OfType<Employee>()
+			//	.Include(e => e.Attendances)
+			//	.Include(e => e.Leaves)
+			//	.Include(e => e.Position)
+			//	.Include(e => e.User);
+			//foreach (var emp in debug)
+			//{
+			//	foreach (var leave in emp.Leaves)
+			//	{
+			//		var startDate = leave.StartDate.Date;
+			//		var endDate = leave.EndDate.Date;
+			//	}
+			//}
+				// Only include Attendances where the Employee has no Leave
+				// means: at least 1 Leave of Employee is
+				// ---[Start...date...End]---
+				//.Where(e => e.Leaves
+				//	.Any(l =>
+				//		(l.StartDate.Date <= date) &&
+				//		(l.EndDate.Date >= date)
+				//	)
+				//	|| e.Leaves.Count == 0);
+
+			var clievalEmployeeResponses = (await _context.People.OfType<Employee>()
+				.Include(e => e.Attendances)
+				.Include(e => e.Leaves)
+				.Include(e => e.Position)
+				.Include(e => e.User)
+
+				// Only include Attendances where the Employee has no Leave
+				// or Employee has Leaves that are
+				// ---date---[Start...End]---
+				// ---[Start...End]---date---
+				//
+				// means: at least 1 Leave of Employee is
+				.ToListAsync())
+				.Where(e => e.EmployedDate <= date)
+				.Where(e => e.Leaves
+					.Any(l =>
+						(l.StartDate.Date > date) ||
+						(l.EndDate.Date < date)
+					)
+					|| e.Leaves.Count == 0)
+				//.Where(a => (
+					// a.StartTimestamp is +0:00 time, correct time but with diff offset
+					// date is +0:00 time, correct time but with diff offset
+					// have to compare and check for "Same Day"
+					// a.StartTimestamp is between [17:00 day1, 16:59 day2]
+					//a.StartTimestamp.AddHours(7).Date == vnDate.Date
+					//)
+					//(a.StartTimestamp.Day == date.Day) && 
+					//(a.StartTimestamp.Month == date.Month) &&
+					//(a.StartTimestamp.Year == date.Year)
+				//)
+				.Select(e => new EmployeeResponse
+				{
+					NationalId = e.NationalId,
+					FullName = e.FullName,
+					Gender = e.Gender,
+					Address = e.Address,
+					BirthDate = e.BirthDate,
+					Email = e.Email,
+					Phone = e.Phone,
+					EmployedDate = e.EmployedDate,
+					PositionName = e.Position.Name,
+					ExperienceYears = e.ExperienceYears,
+
+					Salary = e.Salary,
+					HasUser = e.User != null,
+					ImageFileName = e.ImageFileName,
+
+					//EmployeeFullName = a.Employee.FullName,
+					//EmployeeNationalId = a.Employee.NationalId,
+					//Status = a.Status,
+					//StartTimestamp = a.StartTimestamp,
+					//StartImageFileName = a.StartImageFileName,
+					//EndTimestamp = a.EndTimestamp,
+					//EndImageFileName = a.EndImageFileName,
+				});
+
+			var totalCount = clievalEmployeeResponses.Count();
+
+			var pagedEmployeeResponses = clievalEmployeeResponses
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToList();
+
+			return new PagedResult<EmployeeResponse>(
+				items: pagedEmployeeResponses,
+				totalCount: totalCount,
+				page: page,
+				pageSize: pageSize);
 		}
 
+		public async Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date)
+		{
+			//var employee = await _context.People.OfType<Employee>()
+			//	.SingleOrDefaultAsync(e => e.NationalId == NationalId);
+
+			//if (employee == null)
+			//{
+			//	return new 
+
+			//}
+
+			var vnDate = date.LocalDateTime;
+
+			var attendance = await _context.Attendances
+				.Include(a => a.Employee)
+				.SingleOrDefaultAsync(a =>
+					(a.Employee.NationalId == NationalId) &&
+					(a.StartTimestamp.Date == vnDate.Date)
+				);
+
+			if (attendance == null)
+			{
+				return null;
+			}
+
+			var attendanceRes = new AttendanceResponse
+			{
+				Status = attendance.Status,
+				StartTimestamp = attendance.StartTimestamp,
+				StartImageFileName = attendance.StartImageFileName,
+				EndTimestamp = attendance.EndTimestamp,
+				EndImageFileName = attendance.EndImageFileName,
+				EmployeeFullName = attendance.Employee.FullName,
+				EmployeeNationalId = attendance.Employee.NationalId,
+			};
+			
+			return attendanceRes;
+		}
+
+
+
+		public async Task<ServiceResult> UpdateStatus(UpdateStatusRequest req)
+		{
+			var attendance = await _context.Attendances
+				.Include(a => a.Employee)
+				.FirstOrDefaultAsync(a => a.Employee.NationalId == req.EmployeeNationalId
+					&& a.StartTimestamp.Date == req.StartTimestamp.Date);
+
+			if (attendance == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoAttendanceError,
+				};
+			}
+
+			if (attendance.EndTimestamp == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.AttendanceNotEndedError,
+				};
+			}
+
+			attendance.Status = req.Status;
+			await _context.SaveChangesAsync();
+
+			return new ServiceResult
+			{
+				Success = true,
+			};
+		}
+		#endregion
+
+		#region==== Mobile ====
 		public async Task<ServiceResult> StartAttendance(StartAttendanceRequest req)
 		{
 			// Find employee
@@ -159,6 +354,23 @@ namespace Capstone.Features.AttendanceModule
 				{
 					Success = false,
 					ErrorMessage = ServiceErrors.NoEmployeeError
+				};
+			}
+
+			// Check if date is on leave for employee
+			var isDateInAnyLeave = await _context.Leaves
+				.Include(l => l.Employee)
+				.Where(l => l.Employee.NationalId == req.EmployeeNationalId)
+				.AnyAsync(l =>
+					(l.StartDate.Date <= req.StartTimestamp.Date) &&
+					(l.EndDate.Date >= req.StartTimestamp.Date));
+
+			if (isDateInAnyLeave)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.EmployeeOnLeaveError
 				};
 			}
 
@@ -229,6 +441,23 @@ namespace Capstone.Features.AttendanceModule
 				};
 			}
 
+			// Check if date is on leave for employee
+			var isDateInAnyLeave = await _context.Leaves
+				.Include(l => l.Employee)
+				.Where(l => l.Employee.NationalId == req.EmployeeNationalId)
+				.AnyAsync(l =>
+					(l.StartDate.Date <= req.EndTimestamp.Date) &&
+					(l.EndDate.Date >= req.EndTimestamp.Date));
+
+			if (isDateInAnyLeave)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.EmployeeOnLeaveError
+				};
+			}
+
 			// Check hash
 			var dailyHash = GetDailyHash();
 			var isHashCorrect = req.QrHash == dailyHash;
@@ -285,42 +514,9 @@ namespace Capstone.Features.AttendanceModule
 				Success = true
 			};
 		}
+		#endregion
 
-		public async Task<ServiceResult> UpdateStatus(UpdateStatusRequest req)
-		{
-			var attendance = await _context.Attendances
-				.Include(a => a.Employee)
-				.FirstOrDefaultAsync(a => a.Employee.NationalId == req.EmployeeNationalId
-					&& a.StartTimestamp.Date == req.StartTimestamp.Date);
-
-			if (attendance == null)
-			{
-				return new ServiceResult
-				{
-					Success = false,
-					ErrorMessage = ServiceErrors.NoAttendanceError,
-				};
-			}
-
-			if (attendance.EndTimestamp == null)
-			{
-				return new ServiceResult
-				{
-					Success = false,
-					ErrorMessage = ServiceErrors.AttendanceNotEndedError,
-				};
-			}
-
-			attendance.Status = req.Status;
-			await _context.SaveChangesAsync();
-
-			return new ServiceResult
-			{
-				Success = true,
-			};
-		}
-
-		#region------DEBUG------
+		#region==== DEBUG ====
 		public async Task<ServiceResult> DEBUG_DELETE()
 		{
 			var di = new DirectoryInfo(DANGEROUS_FILE_PATH);

@@ -4,6 +4,7 @@ using Capstone.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Capstone.Migrations
 {
     [DbContext(typeof(CapstoneContext))]
-    partial class CapstoneContextModelSnapshot : ModelSnapshot
+    [Migration("20230419102053_Add_Leave_RelEmployeeLeave")]
+    partial class Add_Leave_RelEmployeeLeave
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -104,8 +106,8 @@ namespace Capstone.Migrations
                     b.Property<string>("RefreshToken")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("RefreshTokenExpiryTime")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -400,10 +402,16 @@ namespace Capstone.Migrations
                     b.Property<DateTimeOffset>("EmployedDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("EndHour")
+                        .HasColumnType("int");
+
                     b.Property<int>("PositionId")
                         .HasColumnType("int");
 
                     b.Property<int>("Salary")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StartHour")
                         .HasColumnType("int");
 
                     b.HasIndex("PositionId");
@@ -426,8 +434,7 @@ namespace Capstone.Migrations
                 {
                     b.HasOne("Capstone.Features.EmployeeModule.Models.Employee", "Employee")
                         .WithOne("User")
-                        .HasForeignKey("Capstone.Features.Auth.Models.EmployeeUser", "EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("Capstone.Features.Auth.Models.EmployeeUser", "EmployeeId");
 
                     b.Navigation("Employee");
                 });

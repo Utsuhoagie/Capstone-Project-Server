@@ -1,5 +1,6 @@
 ﻿using Capstone.Features.AttendanceModule.Models;
 using Capstone.Features.Auth.Models;
+using Capstone.Features.LeaveModule.Models;
 using Capstone.Features.PositionModule.Models;
 using Capstone.Models;
 
@@ -9,11 +10,10 @@ namespace Capstone.Features.EmployeeModule.Models
     {
         public int Salary { get; set; }
         public DateTimeOffset EmployedDate { get; set; }
-        public int StartHour { get; set; }
-        public int EndHour { get; set; }
 
         public int PositionId { get; set; }
         public Position Position { get; set; } = new Position();
+		public List<Leave> Leaves { get; set; } = new List<Leave>();
         public List<Attendance> Attendances { get; set; } = new List<Attendance>();
         public EmployeeUser? User { get; set; }
     }
@@ -22,8 +22,6 @@ namespace Capstone.Features.EmployeeModule.Models
     {
         public int Salary { get; set; }
         public DateTimeOffset EmployedDate { get; set; }
-        public int StartHour { get; set; }
-        public int EndHour { get; set; }
 
         public string PositionName { get; set; } = string.Empty;
         //public bool HasUser { get; set; }
@@ -33,8 +31,6 @@ namespace Capstone.Features.EmployeeModule.Models
 	{
 		public int Salary { get; set; }
 		public DateTimeOffset EmployedDate { get; set; }
-		public int StartHour { get; set; }
-		public int EndHour { get; set; }
 
 		public string PositionName { get; set; } = string.Empty;
 		public bool HasUser { get; set; }

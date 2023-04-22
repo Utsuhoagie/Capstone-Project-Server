@@ -34,7 +34,7 @@ namespace Capstone.Features.EmployeeModule
 		public async Task<IActionResult> GetEmployees(
 			int? page, int? pageSize,
 			string? SubName, string? Gender, string? Address, int? ExperienceYears,
-			string? PositionName, DateTimeOffset? EmployedDateFrom, DateTimeOffset? EmployedDateTo, int? Salary)
+			string? PositionName, DateTime? EmployedDateFrom, DateTimeOffset? EmployedDateTo, int? Salary)
 		{
 			if (page == null || pageSize == null)
 			{

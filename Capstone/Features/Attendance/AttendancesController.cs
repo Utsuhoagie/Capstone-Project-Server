@@ -22,8 +22,9 @@ namespace Capstone.Features.AttendanceModule
 			_configuration = configuration;
 		}
 
+		#region==== Web ====
 		[HttpGet("DailyHash")]
-		[Authorize]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetDailyHash()
 		{
 			var dailyHash = _service.GetDailyHash();
@@ -32,19 +33,29 @@ namespace Capstone.Features.AttendanceModule
 
 		// GET: api/Attendances/Monthly?date=2023-04-07T02:04:29.000Z
 		[HttpGet("DailyAttendanceStatusesOfMonth")]
+		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date)
 		{
-			var vnDate = date.AddHours(7);
-			DateOnly dateOnly = new DateOnly(vnDate.Year, vnDate.Month, vnDate.Day);
-			var monthAttendanceStatus = await _service.GetDailyAttendanceStatusesOfMonth(dateOnly);
+			var vnDate = date.ToOffset(new TimeSpan(7,0,0));
+			var monthAttendanceStatus = await _service.GetDailyAttendanceStatusesOfMonth(vnDate);
 
 			return Ok(monthAttendanceStatus);
 		}
 
-		// GET: api/Attendances/Daily?page=1&pageSize=30&date=2023-04-07T02:04:29.000Z
-		[HttpGet("Daily")]
+		[HttpGet("TestDate")]
+		public IActionResult TestDate(DateTime date, DateTimeOffset dateTimeOffset)
+		{
+			return Ok(new
+			{
+				date = date,
+				dateTimeOffset = dateTimeOffset,
+			});
+		}
+
+		// GET: api/Attendances/EmployeesNotOnLeave?page=1&pageSize=30&date=2023-04-07T02:04:29.000Z
+		[HttpGet("EmployeesNotOnLeave")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<IActionResult> GetDailyAttendances(
+		public async Task<IActionResult> GetEmployeesNotOnLeave(
 			int page, int pageSize,
 			DateTimeOffset date)
 		{
@@ -54,15 +65,44 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			PagingParams pagingParams = new PagingParams { Page = page, PageSize = pageSize };
-			var vnDate = date.AddHours(7);
-			DateOnly dateOnly = new DateOnly(vnDate.Year, vnDate.Month, vnDate.Day);
+			DateTimeOffset vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
 
-			var pagedAttendanceDtos = await _service
-				.GetDailyAttendances(pagingParams, dateOnly);
+			var pagedEmployeeResponses = await _service
+				.GetEmployeesNotOnLeave(pagingParams, vnDate);
 			
-			return Ok(pagedAttendanceDtos);
+			return Ok(pagedEmployeeResponses);
 		}
 
+		[HttpGet("AttendanceOfEmployee")]
+		[Authorize(Roles = AuthRoles.Admin)]
+		public async Task<IActionResult> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date)
+		{
+			var result = await _service.GetAttendanceOfEmployee(NationalId, date);
+
+			if (result == null)
+			{
+				return Ok(null);
+			}
+
+			return Ok(result);
+		}
+
+		[HttpPut("UpdateStatus")]
+		[Authorize(Roles = AuthRoles.Admin)]
+		public async Task<IActionResult> UpdateStatus(UpdateStatusRequest req)
+		{
+			var result = await _service.UpdateStatus(req);
+
+			if (result.Success)
+			{
+				return BadRequest(result.ErrorMessage);
+			}
+
+			return Ok(result);
+		}
+		#endregion
+
+		#region==== Mobile ====
 		[HttpPost("Start")]
 		[Authorize]
 		[Consumes("multipart/form-data")]
@@ -114,20 +154,7 @@ namespace Capstone.Features.AttendanceModule
 				Image = endImage
 			}*/);
 		}
-
-		[HttpPut("UpdateStatus")]
-		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<IActionResult> UpdateStatus(UpdateStatusRequest req)
-		{
-			var result = await _service.UpdateStatus(req);
-
-			if (result.Success)
-			{
-				return BadRequest(result.ErrorMessage);
-			}
-
-			return Ok(result);
-		}
+		#endregion
 
 		[HttpDelete]
 		public async Task<IActionResult> DEBUG_DELETE()

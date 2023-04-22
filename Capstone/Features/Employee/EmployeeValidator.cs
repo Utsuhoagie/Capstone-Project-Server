@@ -63,15 +63,6 @@ namespace Capstone.Features.EmployeeModule
 			RuleFor(e => e.EmployedDate)
 				.NotEmpty()
 				.LessThanOrEqualTo(DateTime.Now);
-
-			RuleFor(e => e.StartHour)
-				.NotNull()
-				.InclusiveBetween(0, 23);
-
-
-			RuleFor(e => e.EndHour)
-				.NotNull()
-				.InclusiveBetween(0, 23);
 		}
 
 		protected override void RaiseValidationException(

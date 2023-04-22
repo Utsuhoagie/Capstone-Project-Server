@@ -343,8 +343,6 @@ namespace Capstone.Features.ApplicantModule
 				Position = position,
 				EmployedDate = req.EmployedDate,
 				Salary = req.Salary,
-				StartHour = req.StartHour,
-				EndHour = req.EndHour,
 				User = null,
 			};
 

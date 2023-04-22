@@ -53,8 +53,6 @@ namespace Capstone.Features.EmployeeModule
 					PositionName = e.Position.Name,
 					Salary = e.Salary,
 					EmployedDate = e.EmployedDate,
-					StartHour = e.StartHour,
-					EndHour = e.EndHour,
 					HasUser = e.User != null,
 				})
 				.ToListAsync();
@@ -104,8 +102,6 @@ namespace Capstone.Features.EmployeeModule
 					PositionName = e.Position.Name,
 					EmployedDate = e.EmployedDate,
 					Salary = e.Salary,
-					StartHour = e.StartHour,
-					EndHour = e.EndHour,
 					HasUser = e.User != null,
 				});
 
@@ -149,8 +145,6 @@ namespace Capstone.Features.EmployeeModule
 				PositionName = employee.Position.Name,
 				Salary = employee.Salary,
 				EmployedDate = employee.EmployedDate,
-				StartHour = employee.StartHour,
-				EndHour = employee.EndHour,
 				HasUser = employee.User != null,
 			};
 		}
@@ -196,8 +190,6 @@ namespace Capstone.Features.EmployeeModule
 				Position = position,
 				Salary = req.Salary,
 				EmployedDate = req.EmployedDate,
-				StartHour = req.StartHour,
-				EndHour = req.EndHour,
 				User = null,
 			};
 			await _context.People.AddAsync(employee);
@@ -247,8 +239,6 @@ namespace Capstone.Features.EmployeeModule
 			employee.Position = position;
 			employee.Salary = req.Salary;
 			employee.EmployedDate = req.EmployedDate;
-			employee.StartHour = req.StartHour;
-			employee.EndHour = req.EndHour;
 			//employee.User = employee.User;
 
 			await _context.SaveChangesAsync();
@@ -274,6 +264,7 @@ namespace Capstone.Features.EmployeeModule
 		public async Task<ServiceResult> DeleteEmployee(string NationalId)
 		{
 			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.User)
 				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
 
 			if (employee == null)

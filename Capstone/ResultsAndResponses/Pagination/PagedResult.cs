@@ -1,4 +1,7 @@
-﻿namespace Capstone.Responses.Pagination
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Drawing.Printing;
+
+namespace Capstone.Responses.Pagination
 {
 	public class PagedResult<T>
 	{
@@ -23,6 +26,18 @@
 
 			CurrentPage = page;
 			PageSize = pageSize;
+
+			TotalCount = totalCount;
+			TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
+		}
+
+		public PagedResult(List<T> items, int totalCount, PagingParams pagingParams)
+		{
+			Items.AddRange(items);
+			Count = Items.Count;
+
+			CurrentPage = pagingParams.Page;
+			PageSize = pagingParams.PageSize;
 
 			TotalCount = totalCount;
 			TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
