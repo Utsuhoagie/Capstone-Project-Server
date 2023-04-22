@@ -9,6 +9,8 @@ using System.Net;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
 using Capstone.Features.EmployeeModule.Models;
+using Microsoft.AspNetCore.Identity;
+using Capstone.Features.Auth.Models;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -26,13 +28,16 @@ namespace Capstone.Features.EmployeeModule
 	{
 		private readonly CapstoneContext _context;
 		private readonly IValidator<EmployeeRequest> _validator;
+		private readonly UserManager<EmployeeUser> _userManager;
 
 		public EmployeeService(
 			CapstoneContext capstoneContext,
-			IValidator<EmployeeRequest> validator)
+			IValidator<EmployeeRequest> validator, 
+			UserManager<EmployeeUser> userManager )
 		{
 			_context = capstoneContext;
 			_validator = validator;
+			_userManager = userManager;
 		}
 
 		public async Task<PagedResult<EmployeeResponse>> GetAllEmployees()

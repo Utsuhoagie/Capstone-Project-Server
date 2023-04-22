@@ -91,13 +91,26 @@ namespace Capstone.Features.AttendanceModule
 			var daysInMonth = DateTime.DaysInMonth(year, month);
 
 			var dailyStatusList = new List<DailyStatus>(
-				Enumerable.Repeat(DailyStatus.Empty, daysInMonth));
+				Enumerable.Repeat(DailyStatus.Finished, daysInMonth));
 			
 			for (int _day = 1; _day <= daysInMonth; _day++)
 			{
+				var dateInMonth = new DateTimeOffset(
+					year, month, _day, 
+					0, 0, 0, 
+					new TimeSpan(7,0,0));
+
+/*				var employeeResponsesNotOnLeaveOnDay = (await
+					GetEmployeesNotOnLeave(
+						new PagingParams { Page = 1, PageSize = 30 }, 
+						dateInMonth
+						)
+					)
+					.Items;*/
+					
 				var attendancesInDate = attendancesInMonth
 					.Where(a => a.StartTimestamp.Day == _day);
-
+				
 				if (attendancesInDate.Count() == 0)
 				{
 					continue;
@@ -113,57 +126,6 @@ namespace Capstone.Features.AttendanceModule
 
 			return dailyStatusList;
 		}
-
-/*		public async Task<List<EmployeeResponse>> GetEmployeesNotOnLeave(
-			PagingParams pagingParams, DateTimeOffset date)
-		{
-			var page = pagingParams.Page;
-			var pageSize = pagingParams.PageSize;
-
-			var clievalEmployeeResponses = _context.People.OfType<Employee>()
-				.Include(e => e.Attendances)
-				.Include(e => e.Leaves)
-
-				// Only include Attendances where the Employee has no Leave
-				//.Where(a => a.Employee.Leaves
-				//	.Any(l => 
-				//		(l.StartDate.Date >= date) ))
-				.Where(e => e.NationalId == )
-				.Where(a => (
-				// a.StartTimestamp is +0:00 time, correct time but with diff offset
-				// date is +0:00 time, correct time but with diff offset
-				// have to compare and check for "Same Day"
-				// a.StartTimestamp is between [17:00 day1, 16:59 day2]
-					a.StartTimestamp.AddHours(7).Date == vnDate.Date
-					)
-				//(a.StartTimestamp.Day == date.Day) && 
-				//(a.StartTimestamp.Month == date.Month) &&
-				//(a.StartTimestamp.Year == date.Year)
-				)
-				.Select(a => new AttendanceResponse
-				{
-					EmployeeFullName = a.Employee.FullName,
-					EmployeeNationalId = a.Employee.NationalId,
-					Status = a.Status,
-					StartTimestamp = a.StartTimestamp,
-					StartImageFileName = a.StartImageFileName,
-					EndTimestamp = a.EndTimestamp,
-					EndImageFileName = a.EndImageFileName,
-				});
-
-			var totalCount = await queryableDailyAttendanceResponses.CountAsync();
-
-			var pagedAttendanceResponses = queryableDailyAttendanceResponses
-				.Skip((page - 1) * pageSize)
-				.Take(pageSize)
-				.ToList();
-
-			return new PagedResult<AttendanceResponse>(
-				items: pagedAttendanceResponses,
-				totalCount: totalCount,
-				page: page,
-				pageSize: pageSize);
-		}*/
 
 		public async Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(
 			PagingParams pagingParams, DateTimeOffset date)
@@ -207,13 +169,12 @@ namespace Capstone.Features.AttendanceModule
 				//
 				// means: at least 1 Leave of Employee is
 				.ToListAsync())
-				.Where(e => e.EmployedDate <= date)
-				.Where(e => e.Leaves
+				.Where(e => e.EmployedDate.Date <= date)
+				.Where(e => e.Leaves.Count == 0 || e.Leaves
 					.Any(l =>
 						(l.StartDate.Date > date) ||
 						(l.EndDate.Date < date)
-					)
-					|| e.Leaves.Count == 0)
+					))
 				//.Where(a => (
 					// a.StartTimestamp is +0:00 time, correct time but with diff offset
 					// date is +0:00 time, correct time but with diff offset
@@ -411,7 +372,7 @@ namespace Capstone.Features.AttendanceModule
 			// Add attendance, with NULL End fields
 			var attendance = new Attendance
 			{
-				StartTimestamp = DateTimeOffset.UtcNow,
+				StartTimestamp = req.StartTimestamp,
 				StartImageFileName = Path.GetFileName(safeFilePathNameWithCorrectExtension),
 				Status = isHashCorrect ? Status.Pending : Status.Rejected,
 				Employee = employee,

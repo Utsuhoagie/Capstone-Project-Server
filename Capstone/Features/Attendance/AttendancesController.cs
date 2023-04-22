@@ -93,7 +93,7 @@ namespace Capstone.Features.AttendanceModule
 		{
 			var result = await _service.UpdateStatus(req);
 
-			if (result.Success)
+			if (!result.Success)
 			{
 				return BadRequest(result.ErrorMessage);
 			}
