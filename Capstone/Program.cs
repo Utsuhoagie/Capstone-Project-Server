@@ -23,6 +23,7 @@ using Capstone.Features.AttendanceModule.Models;
 using Capstone.Features.EmployeeModule.Models;
 using Capstone.Features.PositionModule.Models;
 using Capstone.Features.LeaveModule;
+using Capstone.Features.FeedbackModule;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +120,7 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
 // ---- Validation Services ----
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
