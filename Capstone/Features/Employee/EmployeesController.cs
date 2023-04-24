@@ -83,7 +83,8 @@ namespace Capstone.Features.EmployeeModule
 		// POST: api/EmployeeModule/Create
 		[HttpPost("Create")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<ActionResult<EmployeeRequest>> PostEmployee(EmployeeRequest employeeReq)
+		[Consumes("multipart/form-data")]
+		public async Task<ActionResult<EmployeeRequest>> PostEmployee([FromForm] EmployeeRequest employeeReq)
 		{
 			await _service.AddEmployee(employeeReq);
 
@@ -99,9 +100,10 @@ namespace Capstone.Features.EmployeeModule
 		// NOTE, WIP: EmployeeModule can update itself, but NOT other Employees
 		// check by current logged in user?
 		[Authorize]
+		[Consumes("multipart/form-data")]
 		public async Task<IActionResult> PutEmployee(
 			[FromRoute] string NationalId, 
-			[FromBody] EmployeeRequest employeeReq)
+			[FromForm] EmployeeRequest employeeReq)
 		{
 			if (NationalId != employeeReq.NationalId)
 			{

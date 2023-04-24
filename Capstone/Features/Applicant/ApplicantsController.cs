@@ -105,9 +105,10 @@ namespace Capstone.Features.ApplicantModule
 		// PUT: api/Applicants/Update/012012012
 		[HttpPut("Update/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
+		[Consumes("multipart/form-data")]
 		public async Task<IActionResult> PutApplicant(
 			[FromRoute] string NationalId, 
-			[FromBody] ApplicantRequest applicantReq)
+			[FromForm] ApplicantRequest applicantReq)
 		{
 			if (NationalId != applicantReq.NationalId)
 			{
@@ -149,9 +150,10 @@ namespace Capstone.Features.ApplicantModule
 		// POST: api/Applicants/Employ/012012012
 		[HttpPost("Employ/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
+		[Consumes("multipart/form-data")]
 		public async Task<IActionResult> EmployApplicant(
 			[FromRoute] string NationalId,
-			[FromBody] EmployeeRequest employeeReq)
+			[FromForm] EmployeeRequest employeeReq)
 		{
 			var result = await _service.EmployApplicant(NationalId, employeeReq);
 

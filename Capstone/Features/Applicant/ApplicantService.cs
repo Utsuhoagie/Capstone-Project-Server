@@ -29,6 +29,7 @@ namespace Capstone.Features.ApplicantModule
 		private readonly CapstoneContext _context;
 		private readonly IValidator<ApplicantRequest> _validator;
 		private readonly string DANGEROUS_FILE_PATH;
+		private readonly string DANGEROUS_EMPLOYEE_FILE_PATH;
 
 		public ApplicantService(
 			CapstoneContext capstoneContext,
@@ -38,6 +39,7 @@ namespace Capstone.Features.ApplicantModule
 			_context = capstoneContext;
 			_validator = validator;
 			DANGEROUS_FILE_PATH = $"{configuration.GetSection("FilePath").Value}\\Applicants";
+			DANGEROUS_EMPLOYEE_FILE_PATH = $"{configuration.GetSection("FilePath").Value}\\Employees";
 		}
 
 		public async Task<PagedResult<ApplicantResponse>> GetAllApplicants()
@@ -246,6 +248,18 @@ namespace Capstone.Features.ApplicantModule
 				};
 			}
 
+			// Upload file
+			var safeFileName = $"{req.NationalId}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
+			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			{
+				if (req.Image != null)
+				{
+					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+
 			applicant.NationalId = req.NationalId;
 			applicant.FullName = req.FullName;
 			applicant.Gender = req.Gender;
@@ -257,6 +271,9 @@ namespace Capstone.Features.ApplicantModule
 			applicant.AppliedPosition = newPosition;
 			applicant.AppliedDate = req.AppliedDate;
 			applicant.AskingSalary = req.AskingSalary;
+			applicant.ImageFileName = req.Image != null? 
+				Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+				null;
 
 			oldPosition.Applicants.Remove(applicant);
 			newPosition.Applicants.Add(applicant);
@@ -330,6 +347,18 @@ namespace Capstone.Features.ApplicantModule
 				};
 			}
 
+			// Upload file
+			var safeFileName = $"{req.NationalId}";
+			var safeFilePathName = Path.Combine(DANGEROUS_EMPLOYEE_FILE_PATH, safeFileName);
+			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			{
+				if (req.Image != null)
+				{
+					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+
 			var employee = new Employee
 			{
 				NationalId = req.NationalId,
@@ -344,6 +373,9 @@ namespace Capstone.Features.ApplicantModule
 				EmployedDate = req.EmployedDate,
 				Salary = req.Salary,
 				User = null,
+				ImageFileName = req.Image != null? 
+					Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+					null,
 			};
 
 			_context.People.Remove(applicant);

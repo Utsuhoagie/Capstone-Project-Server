@@ -11,6 +11,7 @@ using Capstone.ResultsAndResponses.ServiceResult;
 using Capstone.Features.EmployeeModule.Models;
 using Microsoft.AspNetCore.Identity;
 using Capstone.Features.Auth.Models;
+using System.Configuration;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -29,15 +30,18 @@ namespace Capstone.Features.EmployeeModule
 		private readonly CapstoneContext _context;
 		private readonly IValidator<EmployeeRequest> _validator;
 		private readonly UserManager<EmployeeUser> _userManager;
+		private readonly string DANGEROUS_FILE_PATH;
 
 		public EmployeeService(
 			CapstoneContext capstoneContext,
 			IValidator<EmployeeRequest> validator, 
-			UserManager<EmployeeUser> userManager )
+			UserManager<EmployeeUser> userManager,
+			IConfiguration configuration)
 		{
 			_context = capstoneContext;
 			_validator = validator;
 			_userManager = userManager;
+			DANGEROUS_FILE_PATH = $"{configuration.GetSection("FilePath").Value}\\Employees";
 		}
 
 		public async Task<PagedResult<EmployeeResponse>> GetAllEmployees()
@@ -59,6 +63,7 @@ namespace Capstone.Features.EmployeeModule
 					Salary = e.Salary,
 					EmployedDate = e.EmployedDate,
 					HasUser = e.User != null,
+					ImageFileName = e.ImageFileName,
 				})
 				.ToListAsync();
 
@@ -108,6 +113,7 @@ namespace Capstone.Features.EmployeeModule
 					EmployedDate = e.EmployedDate,
 					Salary = e.Salary,
 					HasUser = e.User != null,
+					ImageFileName = e.ImageFileName,
 				});
 
 			var pagedEmployeeDtos = await queryableFilteredEmployeeDtos
@@ -151,6 +157,7 @@ namespace Capstone.Features.EmployeeModule
 				Salary = employee.Salary,
 				EmployedDate = employee.EmployedDate,
 				HasUser = employee.User != null,
+				ImageFileName = employee.ImageFileName,
 			};
 		}
 
@@ -182,6 +189,18 @@ namespace Capstone.Features.EmployeeModule
 				};
 			}
 
+			// Upload file
+			var safeFileName = $"{req.NationalId}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
+			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			{
+				if (req.Image != null)
+				{
+					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+
 			var employee = new Employee
 			{
 				NationalId = req.NationalId,
@@ -196,6 +215,9 @@ namespace Capstone.Features.EmployeeModule
 				Salary = req.Salary,
 				EmployedDate = req.EmployedDate,
 				User = null,
+				ImageFileName = req.Image != null? 
+					Path.GetFileName(safeFilePathNameWithCorrectExtension) : 
+					null,
 			};
 			await _context.People.AddAsync(employee);
 			await _context.SaveChangesAsync();
@@ -233,6 +255,18 @@ namespace Capstone.Features.EmployeeModule
 				};
 			}
 
+			// Upload file
+			var safeFileName = $"{req.NationalId}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
+			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			{
+				if (req.Image != null)
+				{
+					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+
 			employee.NationalId = req.NationalId;
 			employee.FullName = req.FullName;
 			employee.Gender = req.Gender;
@@ -245,6 +279,9 @@ namespace Capstone.Features.EmployeeModule
 			employee.Salary = req.Salary;
 			employee.EmployedDate = req.EmployedDate;
 			//employee.User = employee.User;
+			employee.ImageFileName = req.Image != null ?
+				Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+				null;
 
 			await _context.SaveChangesAsync();
 
