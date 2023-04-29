@@ -48,7 +48,7 @@ namespace Capstone.Features.LeaveModule
 		}
 		#endregion
 
-		#region
+		#region==== Mobile ====
 		// GET: /Leaves/Check?NationalId=000000001&date=2023-04-19T10:37:16.914Z
 		[HttpGet("Check")]
 		[Authorize]
@@ -58,6 +58,14 @@ namespace Capstone.Features.LeaveModule
 			var result = await _service.CheckIfOnLeave(NationalId, date);
 
 			return Ok(new { IsOnLeave = result });
+		}
+		#endregion
+
+		#region==== DEBUG ====
+		[HttpDelete]
+		public async Task<IActionResult> DEBUG_DELETE()
+		{
+			return Ok(await _service.DEBUG_DELETE());
 		}
 		#endregion
 	}

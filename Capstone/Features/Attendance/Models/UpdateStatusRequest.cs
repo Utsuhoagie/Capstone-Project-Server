@@ -6,6 +6,6 @@ namespace Capstone.Features.AttendanceModule.Models
 	{
 		public string EmployeeNationalId { get; set; } = string.Empty;
 		public DateTimeOffset StartTimestamp { get; set; }
-		public Status Status { get; set; }
+		public AttendanceStatus Status { get; set; }
 	}
 }

@@ -48,7 +48,7 @@ namespace Capstone.Migrations
                     b.Property<DateTimeOffset>("StartTimestamp")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
+                    b.Property<int>("AttendanceStatus")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

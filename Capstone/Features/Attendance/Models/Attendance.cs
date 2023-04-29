@@ -2,7 +2,7 @@
 
 namespace Capstone.Features.AttendanceModule.Models
 {
-    public enum Status
+    public enum AttendanceStatus
     {
         Pending = 0,
         Accepted = 1,
@@ -12,7 +12,7 @@ namespace Capstone.Features.AttendanceModule.Models
     public class Attendance
     {
         public int Id { get; set; }
-        public Status Status { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
         public string StartImageFileName { get; set; } = string.Empty;
         public DateTimeOffset? EndTimestamp { get; set; }
@@ -25,7 +25,7 @@ namespace Capstone.Features.AttendanceModule.Models
 
     public class AttendanceRequest
     {
-        public Status Status { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
         public string StartImageFileName { get; set; } = string.Empty;
         public DateTimeOffset? EndTimestamp { get; set; }
@@ -37,7 +37,7 @@ namespace Capstone.Features.AttendanceModule.Models
 	
 	public class AttendanceResponse
     {
-        public Status Status { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; }
         public DateTimeOffset StartTimestamp { get; set; }
         public string StartImageFileName { get; set; } = string.Empty;
         public DateTimeOffset? EndTimestamp { get; set; }

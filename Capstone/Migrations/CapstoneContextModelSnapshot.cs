@@ -30,6 +30,9 @@ namespace Capstone.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
+                    b.Property<int>("AttendanceStatus")
+                        .HasColumnType("int");
+
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
@@ -46,14 +49,11 @@ namespace Capstone.Migrations
                     b.Property<DateTimeOffset>("StartTimestamp")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Attendances");
+                    b.ToTable("Attendances", (string)null);
                 });
 
             modelBuilder.Entity("Capstone.Features.Auth.Models.EmployeeUser", b =>
@@ -160,7 +160,7 @@ namespace Capstone.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Feedbacks");
+                    b.ToTable("Feedbacks", (string)null);
                 });
 
             modelBuilder.Entity("Capstone.Features.LeaveModule.Models.Leave", b =>
@@ -184,7 +184,7 @@ namespace Capstone.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Leaves");
+                    b.ToTable("Leaves", (string)null);
                 });
 
             modelBuilder.Entity("Capstone.Features.PositionModule.Models.Position", b =>
@@ -201,7 +201,7 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Positions");
+                    b.ToTable("Positions", (string)null);
                 });
 
             modelBuilder.Entity("Capstone.Models.Person", b =>
@@ -251,7 +251,7 @@ namespace Capstone.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("People");
+                    b.ToTable("People", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("Person");
                 });

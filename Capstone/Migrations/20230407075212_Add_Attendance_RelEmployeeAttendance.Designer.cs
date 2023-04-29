@@ -39,7 +39,7 @@ namespace Capstone.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Status")
+                    b.Property<int>("AttendanceStatus")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("StartTimestamp")

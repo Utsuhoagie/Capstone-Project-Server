@@ -22,6 +22,7 @@ namespace Capstone.Features.EmployeeModule
 		Task<EmployeeResponse?> GetEmployee(string NationalId);
 		Task<ServiceResult> AddEmployee(EmployeeRequest req);
 		Task<ServiceResult> UpdateEmployee(string NationalId, EmployeeRequest req);
+		Task<ServiceResult> UpdateSelf(string NationalId, UpdateSelfRequest req);
 		Task<ServiceResult> DeleteAllEmployees();
 		Task<ServiceResult> DeleteEmployee(string NationalId);
 	}
@@ -290,6 +291,59 @@ namespace Capstone.Features.EmployeeModule
 				Success = true,
 			};
 		}
+
+		public async Task<ServiceResult> UpdateSelf(string NationalId, UpdateSelfRequest req)
+		{
+			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.User)
+				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
+
+			if (employee == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoEmployeeError
+				};
+			}
+
+			if (NationalId != req.NationalId)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.EmployeeNotSelfError,
+				};
+			}
+
+			// Upload file
+			var safeFileName = $"{req.NationalId}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
+			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			if (req.Image != null)
+			{
+				using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+				{
+					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+
+			//employee.NationalId = req.NationalId;
+			employee.BirthDate = req.BirthDate != null? req.BirthDate : employee.BirthDate;
+			employee.Address = req.Address != null? req.Address : employee.Address;
+			employee.Phone = req.Phone != null? req.Phone : employee.Phone;
+			employee.ImageFileName = req.Image != null ?
+				Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+				employee.ImageFileName;
+
+			await _context.SaveChangesAsync();
+
+			return new ServiceResult
+			{
+				Success = true,
+			};
+		}
+
 
 		public async Task<ServiceResult> DeleteAllEmployees()
 		{

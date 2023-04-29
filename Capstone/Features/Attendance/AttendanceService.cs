@@ -22,12 +22,15 @@ namespace Capstone.Features.AttendanceModule
 	{
 		// ==== Web ====
 		string GetDailyHash();
-		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date);
-		Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(PagingParams pagingParams, DateTimeOffset date);
-		Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date);
+		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset vnDate);
+		Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(PagingParams pagingParams, DateTimeOffset vnDate);
+		Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset vnDate);
+		Task<ServiceResult> BatchUpdatePreviousDaysOfMonth(string type, DateTimeOffset vnDate);
 		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);
 
 		// ==== Mobile ====
+		// returns "Empty", "Started" or "Ended"
+		Task<string?> CheckAttendanceToday(string NationalId, DateTimeOffset vnDate);
 		Task<ServiceResult> StartAttendance(StartAttendanceRequest req);
 		Task<ServiceResult> EndAttendance(EndAttendanceRequest req);
 
@@ -78,11 +81,13 @@ namespace Capstone.Features.AttendanceModule
 		}
 
 		
-		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date)
+		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset vnDate)
 		{
-			var day = date.Day;
-			var month = date.Month;
-			var year = date.Year;
+			var currentDate = DateTimeOffset.Now;
+
+			var day = vnDate.Day;
+			var month = vnDate.Month;
+			var year = vnDate.Year;
 
 			var attendancesInMonth = await _context.Attendances
 				.Where(a => a.StartTimestamp.Month == month && a.StartTimestamp.Year == year)
@@ -91,33 +96,72 @@ namespace Capstone.Features.AttendanceModule
 			var daysInMonth = DateTime.DaysInMonth(year, month);
 
 			var dailyStatusList = new List<DailyStatus>(
-				Enumerable.Repeat(DailyStatus.Finished, daysInMonth));
+				Enumerable.Repeat(DailyStatus.Empty, daysInMonth));
 			
 			for (int _day = 1; _day <= daysInMonth; _day++)
 			{
 				var dateInMonth = new DateTimeOffset(
-					year, month, _day, 
-					0, 0, 0, 
-					new TimeSpan(7,0,0));
+						year, month, _day,
+						0, 0, 0,
+						new TimeSpan(7, 0, 0));
 
-/*				var employeeResponsesNotOnLeaveOnDay = (await
-					GetEmployeesNotOnLeave(
-						new PagingParams { Page = 1, PageSize = 30 }, 
-						dateInMonth
-						)
-					)
-					.Items;*/
-					
+				// Future dates are just DailyStatus.Empty
+				if (dateInMonth.Date > currentDate)
+				{
+					continue;
+				}
+
+				var dayOfWeek = dateInMonth.DayOfWeek;
+
+				if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+				{
+					continue;
+				}
+
 				var attendancesInDate = attendancesInMonth
 					.Where(a => a.StartTimestamp.Day == _day);
 				
 				if (attendancesInDate.Count() == 0)
 				{
+					var employeeResponsesNotOnLeaveOnDay = (await
+						GetEmployeesNotOnLeave(
+							new PagingParams { Page = 1, PageSize = 30 },
+							dateInMonth
+							)
+						)
+						.Items;
+
+					// No Attendances today, BUT
+					// all Employees are on Leave too
+					// -> DailyStatus is Empty (white on FE)
+					if (employeeResponsesNotOnLeaveOnDay.Count() == 0)
+					{
+						dailyStatusList[_day - 1] = DailyStatus.Empty;
+					}
+
+					// No Attendances today, AND
+					// some Employees are NOT on Leave
+					// they must submit Attendances
+					// -> DailyStatus is Pending (red on FE)
+
+					// If they still don't, if this vnDate is BEFORE today
+					// admin can reject this + mark as Violation
+					else
+					{
+						dailyStatusList[_day - 1] = DailyStatus.Empty;
+						//dailyStatusList[_day - 1] = DailyStatus.Pending;
+					}
+
 					continue;
 				}
 
+
+				// Don't need to check Employees Not On Leave here
+				// because by default,
+				// only Employees Not On Leave
+				// can submit Attendances
 				var dailyStatus = attendancesInDate
-					.Any(a => a.Status == Status.Pending) ?
+					.Any(a => a.AttendanceStatus == AttendanceStatus.Pending) ?
 						DailyStatus.Pending :
 						DailyStatus.Finished;
 
@@ -128,7 +172,7 @@ namespace Capstone.Features.AttendanceModule
 		}
 
 		public async Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(
-			PagingParams pagingParams, DateTimeOffset date)
+			PagingParams pagingParams, DateTimeOffset vnDate)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
@@ -148,11 +192,11 @@ namespace Capstone.Features.AttendanceModule
 			//}
 				// Only include Attendances where the Employee has no Leave
 				// means: at least 1 Leave of Employee is
-				// ---[Start...date...End]---
+				// ---[Start...vnDate...End]---
 				//.Where(e => e.Leaves
 				//	.Any(l =>
-				//		(l.StartDate.Date <= date) &&
-				//		(l.EndDate.Date >= date)
+				//		(l.StartDate.Date <= vnDate) &&
+				//		(l.EndDate.Date >= vnDate)
 				//	)
 				//	|| e.Leaves.Count == 0);
 
@@ -164,28 +208,28 @@ namespace Capstone.Features.AttendanceModule
 
 				// Only include Attendances where the Employee has no Leave
 				// or Employee has Leaves that are
-				// ---date---[Start...End]---
-				// ---[Start...End]---date---
+				// ---vnDate---[Start...End]---
+				// ---[Start...End]---vnDate---
 				//
 				// means: at least 1 Leave of Employee is
 				.ToListAsync())
-				.Where(e => e.EmployedDate.Date <= date)
+				.Where(e => e.EmployedDate.Date <= vnDate)
 				.Where(e => e.Leaves.Count == 0 || e.Leaves
 					.Any(l =>
-						(l.StartDate.Date > date) ||
-						(l.EndDate.Date < date)
+						(l.StartDate.Date > vnDate) ||
+						(l.EndDate.Date < vnDate)
 					))
-				//.Where(a => (
-					// a.StartTimestamp is +0:00 time, correct time but with diff offset
-					// date is +0:00 time, correct time but with diff offset
-					// have to compare and check for "Same Day"
-					// a.StartTimestamp is between [17:00 day1, 16:59 day2]
-					//a.StartTimestamp.AddHours(7).Date == vnDate.Date
-					//)
-					//(a.StartTimestamp.Day == date.Day) && 
-					//(a.StartTimestamp.Month == date.Month) &&
-					//(a.StartTimestamp.Year == date.Year)
-				//)
+				/*.Where(a => (
+					 a.StartTimestamp is +0:00 time, correct time but with diff offset
+					 vnDate is +0:00 time, correct time but with diff offset
+					 have to compare and check for "Same Day"
+					 a.StartTimestamp is between[17:00 day1, 16:59 day2]
+					a.StartTimestamp.AddHours(7).Date == vnDate.Date
+					)
+				(a.StartTimestamp.Day == vnDate.Day) &&
+				(a.StartTimestamp.Month == vnDate.Month) &&
+				(a.StartTimestamp.Year == vnDate.Year)
+				)*/
 				.Select(e => new EmployeeResponse
 				{
 					NationalId = e.NationalId,
@@ -203,13 +247,13 @@ namespace Capstone.Features.AttendanceModule
 					HasUser = e.User != null,
 					ImageFileName = e.ImageFileName,
 
-					//EmployeeFullName = a.Employee.FullName,
-					//EmployeeNationalId = a.Employee.NationalId,
-					//Status = a.Status,
-					//StartTimestamp = a.StartTimestamp,
-					//StartImageFileName = a.StartImageFileName,
-					//EndTimestamp = a.EndTimestamp,
-					//EndImageFileName = a.EndImageFileName,
+					/*EmployeeFullName = a.Employee.FullName,
+					EmployeeNationalId = a.Employee.NationalId,
+					AttendanceStatus = a.AttendanceStatus,
+					StartTimestamp = a.StartTimestamp,
+					StartImageFileName = a.StartImageFileName,
+					EndTimestamp = a.EndTimestamp,
+					EndImageFileName = a.EndImageFileName,*/
 				});
 
 			var totalCount = clievalEmployeeResponses.Count();
@@ -226,7 +270,7 @@ namespace Capstone.Features.AttendanceModule
 				pageSize: pageSize);
 		}
 
-		public async Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date)
+		public async Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset vnDate)
 		{
 			//var employee = await _context.People.OfType<Employee>()
 			//	.SingleOrDefaultAsync(e => e.NationalId == NationalId);
@@ -236,8 +280,6 @@ namespace Capstone.Features.AttendanceModule
 			//	return new 
 
 			//}
-
-			var vnDate = date.LocalDateTime;
 
 			var attendance = await _context.Attendances
 				.Include(a => a.Employee)
@@ -253,7 +295,7 @@ namespace Capstone.Features.AttendanceModule
 
 			var attendanceRes = new AttendanceResponse
 			{
-				Status = attendance.Status,
+				AttendanceStatus = attendance.AttendanceStatus,
 				StartTimestamp = attendance.StartTimestamp,
 				StartImageFileName = attendance.StartImageFileName,
 				EndTimestamp = attendance.EndTimestamp,
@@ -265,7 +307,28 @@ namespace Capstone.Features.AttendanceModule
 			return attendanceRes;
 		}
 
+		public async Task<ServiceResult> BatchUpdatePreviousDaysOfMonth(string type, DateTimeOffset vnDate)
+		{
+			// type = 'Accept' || 'Reject'
 
+			var previousAttendancesOfMonth = await _context.Attendances
+				.Where(a => a.StartTimestamp.Date < vnDate.Date)
+				.ToListAsync();
+
+			foreach (var attendance in previousAttendancesOfMonth)
+			{
+				var newAttendanceStatus =
+					type == "Accept" ? AttendanceStatus.Accepted :
+					type == "Reject" ? AttendanceStatus.Rejected :
+					attendance.AttendanceStatus;
+				attendance.AttendanceStatus = newAttendanceStatus;
+			}
+
+			return new ServiceResult
+			{
+				Success = true,
+			};
+		}
 
 		public async Task<ServiceResult> UpdateStatus(UpdateStatusRequest req)
 		{
@@ -292,7 +355,7 @@ namespace Capstone.Features.AttendanceModule
 				};
 			}
 
-			attendance.Status = req.Status;
+			attendance.AttendanceStatus = req.Status;
 			await _context.SaveChangesAsync();
 
 			return new ServiceResult
@@ -302,7 +365,38 @@ namespace Capstone.Features.AttendanceModule
 		}
 		#endregion
 
+
 		#region==== Mobile ====
+		public async Task<string?> CheckAttendanceToday(string NationalId, DateTimeOffset vnDate)
+		{
+			var employee = await _context.People.OfType<Employee>()
+				.Include(e => e.Attendances)
+				.FirstOrDefaultAsync(e => e.NationalId == NationalId);
+
+			if (employee == null)
+			{
+				return null;
+			}
+
+			var attendanceToday = employee.Attendances
+				.Where(a => a.StartTimestamp.Date == vnDate.Date)
+				.SingleOrDefault();
+
+			if (attendanceToday == null)
+			{
+				return "Empty";
+			}
+
+			if (attendanceToday.EndTimestamp == null)
+			{
+				return "Started";
+			}
+			else
+			{
+				return "Ended";
+			}
+		}
+
 		public async Task<ServiceResult> StartAttendance(StartAttendanceRequest req)
 		{
 			// Find employee
@@ -318,7 +412,7 @@ namespace Capstone.Features.AttendanceModule
 				};
 			}
 
-			// Check if date is on leave for employee
+			// Check if vnDate is on leave for employee
 			var isDateInAnyLeave = await _context.Leaves
 				.Include(l => l.Employee)
 				.Where(l => l.Employee.NationalId == req.EmployeeNationalId)
@@ -359,7 +453,7 @@ namespace Capstone.Features.AttendanceModule
 			var startT = req.StartTimestamp;
 			var safeFileNameTimestamp =
 				$"{startT.Day}-{startT.Month}-{startT.Year}_{startT.Hour}-{startT.Minute}";
-			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}";
+			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}_START";
 			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
 			var safeFilePathNameWithCorrectExtension =
 				Path.ChangeExtension(safeFilePathName, "jpeg");
@@ -374,7 +468,7 @@ namespace Capstone.Features.AttendanceModule
 			{
 				StartTimestamp = req.StartTimestamp,
 				StartImageFileName = Path.GetFileName(safeFilePathNameWithCorrectExtension),
-				Status = isHashCorrect ? Status.Pending : Status.Rejected,
+				AttendanceStatus = isHashCorrect ? AttendanceStatus.Pending : AttendanceStatus.Rejected,
 				Employee = employee,
 			};
 			await _context.Attendances.AddAsync(attendance);
@@ -402,7 +496,7 @@ namespace Capstone.Features.AttendanceModule
 				};
 			}
 
-			// Check if date is on leave for employee
+			// Check if vnDate is on leave for employee
 			var isDateInAnyLeave = await _context.Leaves
 				.Include(l => l.Employee)
 				.Where(l => l.Employee.NationalId == req.EmployeeNationalId)
@@ -454,7 +548,7 @@ namespace Capstone.Features.AttendanceModule
 			//var safeFileName = Path.GetRandomFileName();
 			var safeFileNameTimestamp =
 				$"{endT.Day}-{endT.Month}-{endT.Year}_{endT.Hour}-{endT.Minute}";
-			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}";
+			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}_END";
 			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
 			var safeFilePathNameWithCorrectExtension =
 				Path.ChangeExtension(safeFilePathName, "jpeg");

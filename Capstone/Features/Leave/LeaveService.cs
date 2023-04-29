@@ -14,6 +14,8 @@ namespace Capstone.Features.LeaveModule
 		Task<ServiceResult> AddLeave(string NationalId, LeaveRequest req);
 
 		Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset date);
+
+		Task<bool> DEBUG_DELETE();
 	}
 
 	public class LeaveService: ILeaveService
@@ -114,6 +116,16 @@ namespace Capstone.Features.LeaveModule
 					(l.EndDate.Date >= date.Date));
 
 			return isDateInAnyLeave;
+		}
+		#endregion
+
+		#region
+		public async Task<bool> DEBUG_DELETE()
+		{
+			_context.Leaves.RemoveRange(await _context.Leaves.ToListAsync());
+			await _context.SaveChangesAsync();
+
+			return true;
 		}
 		#endregion
 	}

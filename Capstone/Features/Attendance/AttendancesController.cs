@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Capstone.Features.AttendanceModule
 {
-    [Route("api/[controller]")]
+	[Route("api/[controller]")]
 	[ApiController]
 	public class AttendancesController : ControllerBase
 	{
 		private readonly IAttendanceService _service;
 		private readonly IConfiguration _configuration;
-		public AttendancesController(IAttendanceService attendanceService, IConfiguration configuration) 
+		public AttendancesController(IAttendanceService attendanceService, IConfiguration configuration)
 		{
 			_service = attendanceService;
 			_configuration = configuration;
@@ -36,7 +36,7 @@ namespace Capstone.Features.AttendanceModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetDailyAttendanceStatusesOfMonth(DateTimeOffset date)
 		{
-			var vnDate = date.ToOffset(new TimeSpan(7,0,0));
+			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
 			var monthAttendanceStatus = await _service.GetDailyAttendanceStatusesOfMonth(vnDate);
 
 			return Ok(monthAttendanceStatus);
@@ -69,7 +69,7 @@ namespace Capstone.Features.AttendanceModule
 
 			var pagedEmployeeResponses = await _service
 				.GetEmployeesNotOnLeave(pagingParams, vnDate);
-			
+
 			return Ok(pagedEmployeeResponses);
 		}
 
@@ -82,6 +82,29 @@ namespace Capstone.Features.AttendanceModule
 			if (result == null)
 			{
 				return Ok(null);
+			}
+
+			return Ok(result);
+		}
+
+		[HttpPut("BatchUpdatePreviousDaysOfMonth")]
+		[Authorize(Roles = AuthRoles.Admin)]
+		public async Task<IActionResult> BatchUpdatePreviousDaysOfMonth(
+			[FromQuery] string type,
+			[FromQuery] DateTimeOffset date)
+		{
+			if (type != "Accept" || type != "Reject")
+			{
+				return BadRequest("Invalid type");
+			}
+
+			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
+
+			var result = await _service.BatchUpdatePreviousDaysOfMonth(type, vnDate);
+
+			if (!result.Success)
+			{
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return Ok(result);
@@ -103,6 +126,23 @@ namespace Capstone.Features.AttendanceModule
 		#endregion
 
 		#region==== Mobile ====
+		[HttpGet("CheckAttendanceToday")]
+		[Authorize]
+		public async Task<IActionResult> CheckAttendanceToday(
+			[FromQuery] string NationalId,
+			[FromQuery] DateTimeOffset date)
+		{
+			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
+			var result = await _service.CheckAttendanceToday(NationalId, vnDate);
+
+			if (result == null)
+			{
+				return BadRequest();
+			}
+
+			return Ok(result);
+		}
+
 		[HttpPost("Start")]
 		[Authorize]
 		[Consumes("multipart/form-data")]

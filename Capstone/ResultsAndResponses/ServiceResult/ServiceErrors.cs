@@ -13,6 +13,7 @@
 		public static readonly string DuplicatePersonError = "Số CMND/CCCD đã tồn tại.";
 		public static readonly string NoApplicantError = "Ứng viên không tồn tại.";
 		public static readonly string NoEmployeeError = "Nhân viên không tồn tại.";
+		public static readonly string EmployeeNotSelfError = "Nhân viên không được phép cập nhật của nhân viên khác.";
 
 		public static readonly string NoAttendanceError = "Đợt chấm công không tồn tại.";
 		public static readonly string AttendanceNotEndedError = "Đợt chấm công chưa kết thúc.";
