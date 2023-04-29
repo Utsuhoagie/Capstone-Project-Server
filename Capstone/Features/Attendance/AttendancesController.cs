@@ -1,6 +1,6 @@
 ﻿using Capstone.Features.AttendanceModule.Models;
 using Capstone.Features.Auth;
-using Capstone.Features.File;
+using Capstone.Features.FileModule;
 using Capstone.Models;
 using Capstone.Responses.Pagination;
 using Microsoft.AspNetCore.Authorization;

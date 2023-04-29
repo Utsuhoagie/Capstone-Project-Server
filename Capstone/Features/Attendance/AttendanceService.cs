@@ -1,8 +1,7 @@
 ﻿using Capstone.Data;
 using Capstone.Features.AttendanceModule.Models;
-using Capstone.Features.AttendanceModule.Models;
 using Capstone.Features.EmployeeModule.Models;
-using Capstone.Features.File;
+using Capstone.Features.FileModule;
 using Capstone.Responses.Pagination;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;

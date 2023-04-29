@@ -129,7 +129,6 @@ namespace Capstone.Features.EmployeeModule
 				totalCount: totalCount,
 				page: page,
 				pageSize: pageSize);
-
 		}
 
 		public async Task<EmployeeResponse?> GetEmployee(string NationalId)
@@ -191,12 +190,12 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFileName = $"{req.NationalId}";
-			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
-			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
-			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			var safeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"jpeg");
+			if (req.Image != null)
 			{
-				if (req.Image != null)
+				using (var fileStream = File.Create(safeFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
 				}
@@ -217,9 +216,10 @@ namespace Capstone.Features.EmployeeModule
 				EmployedDate = req.EmployedDate,
 				User = null,
 				ImageFileName = req.Image != null? 
-					Path.GetFileName(safeFilePathNameWithCorrectExtension) : 
+					Path.GetFileName(safeFilePathName) : 
 					null,
 			};
+
 			await _context.People.AddAsync(employee);
 			await _context.SaveChangesAsync();
 
@@ -257,12 +257,12 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFileName = $"{req.NationalId}";
-			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
-			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
-			using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+			var safeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"jpeg"); 
+			if (req.Image != null)
 			{
-				if (req.Image != null)
+				using (var fileStream = File.Create(safeFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
 				}
@@ -281,7 +281,7 @@ namespace Capstone.Features.EmployeeModule
 			employee.EmployedDate = req.EmployedDate;
 			//employee.User = employee.User;
 			employee.ImageFileName = req.Image != null ?
-				Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+				Path.GetFileName(safeFilePathName) :
 				null;
 
 			await _context.SaveChangesAsync();
@@ -317,12 +317,12 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFileName = $"{req.NationalId}";
-			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, safeFileName);
-			var safeFilePathNameWithCorrectExtension = Path.ChangeExtension(safeFilePathName, "jpeg");
+			var safeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"jpeg");
 			if (req.Image != null)
 			{
-				using (var fileStream = System.IO.File.Create(safeFilePathNameWithCorrectExtension))
+				using (var fileStream = File.Create(safeFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
 				}
@@ -333,7 +333,7 @@ namespace Capstone.Features.EmployeeModule
 			employee.Address = req.Address != null? req.Address : employee.Address;
 			employee.Phone = req.Phone != null? req.Phone : employee.Phone;
 			employee.ImageFileName = req.Image != null ?
-				Path.GetFileName(safeFilePathNameWithCorrectExtension) :
+				Path.GetFileName(safeFilePathName) :
 				employee.ImageFileName;
 
 			await _context.SaveChangesAsync();
