@@ -18,11 +18,19 @@ namespace Capstone.Features.FileModule
 		[HttpGet("Image/{module}/{imageFileName}")]
 		public IActionResult GetImageFromFileName(string module, string imageFileName)
 		{
-			//var image = System.IO.
 			var DANGEROUS_FILE_PATH = $"{_configuration.GetSection("FilePath").Value}\\{module}";
 			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, imageFileName);
 			var s = Path.ChangeExtension(safeFilePathName, "jpeg");
 			return PhysicalFile(s, "image/jpeg"); 
+		}
+
+		[HttpGet("Document/{module}/{documentFileName}")]
+		public IActionResult GetDocumentFromFileName(string module, string documentFileName)
+		{
+			var DANGEROUS_FILE_PATH = $"{_configuration.GetSection("FilePath").Value}\\{module}";
+			var safeFilePathName = Path.Combine(DANGEROUS_FILE_PATH, documentFileName);
+			var s = Path.ChangeExtension(safeFilePathName, "pdf");
+			return PhysicalFile(s, "application/pdf"); 
 		}
 	}
 }

@@ -7,5 +7,6 @@
 		public string? Address { get; set; }
 		public DateTimeOffset? BirthDate { get; set; }
 		public IFormFile? Image { get; set; }
+		public IFormFile? Resume { get; set; }
 	}
 }

@@ -22,9 +22,9 @@ namespace Capstone.Features.ApplicantModule
 		Task<ApplicantResponse?> GetApplicant(string NationalId);
 		Task<ServiceResult> AddApplicant(ApplicantRequest req);
 		Task<ServiceResult> UpdateApplicant(string NationalId, ApplicantRequest req);
+		Task<ServiceResult> EmployApplicant(string NationalId, EmployeeRequest req);
 		Task<ServiceResult> DeleteAllApplicants();
 		Task<ServiceResult> DeleteApplicant(string NationalId);
-		Task<ServiceResult> EmployApplicant(string NationalId, EmployeeRequest req);
 	}
 	public class ApplicantService : IApplicantService
 	{
@@ -61,6 +61,8 @@ namespace Capstone.Features.ApplicantModule
 					AppliedPositionName = a.AppliedPosition.Name,
 					AppliedDate = a.AppliedDate,
 					AskingSalary = a.AskingSalary,
+					ImageFileName = a.ImageFileName,
+					ResumeFileName = a.ResumeFileName,
 				})
 				.ToListAsync();
 
@@ -109,6 +111,7 @@ namespace Capstone.Features.ApplicantModule
 					AppliedDate = a.AppliedDate,
 					AskingSalary = a.AskingSalary,
 					ImageFileName = a.ImageFileName,
+					ResumeFileName = a.ResumeFileName,
 				});
 
 			var pagedApplicantResponses = await queryableFilteredApplicantResponses
@@ -150,6 +153,7 @@ namespace Capstone.Features.ApplicantModule
 				AppliedDate = applicant.AppliedDate,
 				AskingSalary = applicant.AskingSalary,
 				ImageFileName = applicant.ImageFileName,
+				ResumeFileName = applicant.ResumeFileName,
 			};
 		}
 
@@ -181,17 +185,28 @@ namespace Capstone.Features.ApplicantModule
 				};
 			}
 
-			// Upload file
-			var safeFilePathName = Path.ChangeExtension(
+			// Upload files
+			var imageFilePathName = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"), 
 				"jpeg");
+			var resumeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"), 
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName))
+				using (var fileStream = File.Create(imageFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
 				}
 			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName))
+				{
+					await req.Resume.CopyToAsync(fileStream);
+				}
+			}
+
 
 			var applicant = new Applicant
 			{
@@ -207,7 +222,10 @@ namespace Capstone.Features.ApplicantModule
 				AppliedDate = req.AppliedDate,
 				AskingSalary = req.AskingSalary,
 				ImageFileName = req.Image != null ?
-					Path.GetFileName(safeFilePathName) :
+					Path.GetFileName(imageFilePathName) :
+					null,
+				ResumeFileName = req.Resume != null ?
+					Path.GetFileName(resumeFilePathName) : 
 					null,
 			};
 			await _context.People.AddAsync(applicant);
@@ -250,15 +268,25 @@ namespace Capstone.Features.ApplicantModule
 				};
 			}
 
-			// Upload file
-			var safeFilePathName = Path.ChangeExtension(
+			// Upload files
+			var imageFilePathName = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
 				"jpeg");
+			var resumeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName))
+				using (var fileStream = File.Create(imageFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName))
+				{
+					await req.Resume.CopyToAsync(fileStream);
 				}
 			}
 
@@ -274,47 +302,15 @@ namespace Capstone.Features.ApplicantModule
 			applicant.AppliedDate = req.AppliedDate;
 			applicant.AskingSalary = req.AskingSalary;
 			applicant.ImageFileName = req.Image != null? 
-				Path.GetFileName(safeFilePathName) :
+				Path.GetFileName(imageFilePathName) :
+				null;
+			applicant.ResumeFileName = req.Resume != null? 
+				Path.GetFileName(resumeFilePathName) :
 				null;
 
 			oldPosition.Applicants.Remove(applicant);
 			newPosition.Applicants.Add(applicant);
 
-			await _context.SaveChangesAsync();
-
-			return new ServiceResult
-			{
-				Success = true,
-			};
-		}
-
-		public async Task<ServiceResult> DeleteAllApplicants()
-		{
-			var applicants = await _context.People.OfType<Applicant>().ToListAsync();
-			_context.People.RemoveRange(applicants);
-			await _context.SaveChangesAsync();
-
-			return new ServiceResult
-			{
-				Success = true,
-			};
-		}
-
-		public async Task<ServiceResult> DeleteApplicant(string NationalId)
-		{
-			var applicant = await _context.People.OfType<Applicant>()
-				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
-
-			if (applicant == null)
-			{
-				return new ServiceResult
-				{
-					Success = false,
-					ErrorMessage = ServiceErrors.NoApplicantError
-				};
-			}
-
-			_context.People.Remove(applicant);
 			await _context.SaveChangesAsync();
 
 			return new ServiceResult
@@ -349,24 +345,41 @@ namespace Capstone.Features.ApplicantModule
 				};
 			}
 
-			// Delete Applicant image
-			var safeFilePathName_Applicant = Path.ChangeExtension(
+			// Delete Applicant image/resume
+			var imageFilePathName_Applicant = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
 				"jpeg");
+			var resumeFilePathName_Applicant = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (applicant.ImageFileName != null)
 			{
 				File.Delete(Path.Combine(DANGEROUS_FILE_PATH, applicant.ImageFileName));
 			}
+			if (applicant.ResumeFileName != null)
+			{
+				File.Delete(Path.Combine(DANGEROUS_FILE_PATH, applicant.ResumeFileName));
+			}
 
-			//...then add Employee image
-			var safeFilePathName_Employee = Path.ChangeExtension(
+			//...then add Employee image/resume
+			var imageFilePathName_Employee = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_EMPLOYEE_FILE_PATH, $"{req.NationalId}"),
 				"jpeg");
+			var resumeFilePathName_Employee = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_EMPLOYEE_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName_Employee))
+				using (var fileStream = File.Create(imageFilePathName_Employee))
 				{
 					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName_Employee))
+				{
+					await req.Resume.CopyToAsync(fileStream);
 				}
 			}
 
@@ -384,14 +397,53 @@ namespace Capstone.Features.ApplicantModule
 				EmployedDate = req.EmployedDate,
 				Salary = req.Salary,
 				User = null,
-				ImageFileName = req.Image != null? 
-					Path.GetFileName(safeFilePathName_Employee) :
+				ImageFileName = req.Image != null ?
+					Path.GetFileName(imageFilePathName_Employee) :
+					null,
+				ResumeFileName = req.Resume != null ?
+					Path.GetFileName(resumeFilePathName_Employee) :
 					null,
 			};
 
 			_context.People.Remove(applicant);
 			_context.People.Add(employee);
 
+			await _context.SaveChangesAsync();
+
+			return new ServiceResult
+			{
+				Success = true,
+			};
+		}
+
+
+		public async Task<ServiceResult> DeleteAllApplicants()
+		{
+			var applicants = await _context.People.OfType<Applicant>().ToListAsync();
+			_context.People.RemoveRange(applicants);
+			await _context.SaveChangesAsync();
+
+			return new ServiceResult
+			{
+				Success = true,
+			};
+		}
+
+		public async Task<ServiceResult> DeleteApplicant(string NationalId)
+		{
+			var applicant = await _context.People.OfType<Applicant>()
+				.SingleOrDefaultAsync(a => a.NationalId == NationalId);
+
+			if (applicant == null)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.NoApplicantError
+				};
+			}
+
+			_context.People.Remove(applicant);
 			await _context.SaveChangesAsync();
 
 			return new ServiceResult

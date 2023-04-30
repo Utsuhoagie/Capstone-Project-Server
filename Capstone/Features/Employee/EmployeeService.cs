@@ -65,6 +65,7 @@ namespace Capstone.Features.EmployeeModule
 					EmployedDate = e.EmployedDate,
 					HasUser = e.User != null,
 					ImageFileName = e.ImageFileName,
+					ResumeFileName = e.ResumeFileName,
 				})
 				.ToListAsync();
 
@@ -115,6 +116,7 @@ namespace Capstone.Features.EmployeeModule
 					Salary = e.Salary,
 					HasUser = e.User != null,
 					ImageFileName = e.ImageFileName,
+					ResumeFileName = e.ResumeFileName,
 				});
 
 			var pagedEmployeeDtos = await queryableFilteredEmployeeDtos
@@ -158,6 +160,7 @@ namespace Capstone.Features.EmployeeModule
 				EmployedDate = employee.EmployedDate,
 				HasUser = employee.User != null,
 				ImageFileName = employee.ImageFileName,
+				ResumeFileName = employee.ResumeFileName,
 			};
 		}
 
@@ -190,14 +193,24 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFilePathName = Path.ChangeExtension(
+			var imageFilePathName = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
 				"jpeg");
+			var resumeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName))
+				using (var fileStream = File.Create(imageFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName))
+				{
+					await req.Resume.CopyToAsync(fileStream);
 				}
 			}
 
@@ -216,7 +229,10 @@ namespace Capstone.Features.EmployeeModule
 				EmployedDate = req.EmployedDate,
 				User = null,
 				ImageFileName = req.Image != null? 
-					Path.GetFileName(safeFilePathName) : 
+					Path.GetFileName(imageFilePathName) : 
+					null,
+				ResumeFileName = req.Resume != null? 
+					Path.GetFileName(resumeFilePathName) : 
 					null,
 			};
 
@@ -257,14 +273,24 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFilePathName = Path.ChangeExtension(
+			var imageFilePathName = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
-				"jpeg"); 
+				"jpeg");
+			var resumeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName))
+				using (var fileStream = File.Create(imageFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName))
+				{
+					await req.Resume.CopyToAsync(fileStream);
 				}
 			}
 
@@ -281,7 +307,10 @@ namespace Capstone.Features.EmployeeModule
 			employee.EmployedDate = req.EmployedDate;
 			//employee.User = employee.User;
 			employee.ImageFileName = req.Image != null ?
-				Path.GetFileName(safeFilePathName) :
+				Path.GetFileName(imageFilePathName) :
+				null;
+			employee.ResumeFileName = req.Resume != null ?
+				Path.GetFileName(resumeFilePathName) :
 				null;
 
 			await _context.SaveChangesAsync();
@@ -317,14 +346,24 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			// Upload file
-			var safeFilePathName = Path.ChangeExtension(
+			var imageFilePathName = Path.ChangeExtension(
 				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
 				"jpeg");
+			var resumeFilePathName = Path.ChangeExtension(
+				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
+				"pdf");
 			if (req.Image != null)
 			{
-				using (var fileStream = File.Create(safeFilePathName))
+				using (var fileStream = File.Create(imageFilePathName))
 				{
 					await req.Image.CopyToAsync(fileStream);
+				}
+			}
+			if (req.Resume != null)
+			{
+				using (var fileStream = File.Create(resumeFilePathName))
+				{
+					await req.Resume.CopyToAsync(fileStream);
 				}
 			}
 
@@ -333,8 +372,11 @@ namespace Capstone.Features.EmployeeModule
 			employee.Address = req.Address != null? req.Address : employee.Address;
 			employee.Phone = req.Phone != null? req.Phone : employee.Phone;
 			employee.ImageFileName = req.Image != null ?
-				Path.GetFileName(safeFilePathName) :
+				Path.GetFileName(imageFilePathName) :
 				employee.ImageFileName;
+			employee.ResumeFileName = req.Resume != null ?
+				Path.GetFileName(resumeFilePathName) :
+				employee.ResumeFileName;
 
 			await _context.SaveChangesAsync();
 

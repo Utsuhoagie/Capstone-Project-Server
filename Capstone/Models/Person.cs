@@ -12,6 +12,7 @@
 		public string Email { get; set; } = string.Empty;
 		public int ExperienceYears { get; set; }
 		public string? ImageFileName { get; set; }
+		public string? ResumeFileName { get; set; }
 	}
 
 	public class PersonRequest
@@ -26,6 +27,7 @@
 		public int ExperienceYears { get; set; }
 		//public string? ImageFileName { get; set; }
 		public IFormFile? Image { get; set; }
+		public IFormFile? Resume { get; set; }
 	}
 
 	public class PersonResponse
@@ -39,5 +41,6 @@
 		public string Email { get; set; } = string.Empty;
 		public int ExperienceYears { get; set; }
 		public string? ImageFileName { get; set; }
+		public string? ResumeFileName { get; set; }
 	}
 }

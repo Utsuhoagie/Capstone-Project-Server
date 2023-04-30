@@ -34,8 +34,8 @@ namespace Capstone.Features.Auth
 		private readonly UserManager<EmployeeUser> _userManager;
 		private readonly IValidator<RegisterRequest> _registerValidator;
 
-		private readonly int ACCESS_EXPIRY_MINUTES = 180;
-		private readonly int REFRESH_EXPIRY_MINUTES = 900;
+		private readonly int ACCESS_EXPIRY_MINUTES = 1440;
+		private readonly int REFRESH_EXPIRY_MINUTES = 2880;
 
 		public AuthService(
 			IConfiguration configuration,
