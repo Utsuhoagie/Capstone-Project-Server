@@ -31,7 +31,23 @@ namespace Capstone.Features.LeaveModule
 
 			return Ok(await _service.GetLeavesOfEmployee(pagingParams, NationalId));
 		}
+		#endregion
 
+		#region==== Mobile ====
+		// GET: /Leaves/Check?NationalId=000000001&date=2023-04-19T10:37:16.914Z
+		[HttpGet("Check")]
+		[Authorize]
+		public async Task<IActionResult> CheckIsOnLeave([FromQuery] string NationalId, 
+			[FromQuery] DateTimeOffset date)
+		{
+			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
+			var result = await _service.CheckIfOnLeave(NationalId, vnDate);
+
+			return Ok(new { IsOnLeave = result });
+		}
+		#endregion
+
+		#region==== DEBUG ====
 		[HttpPost("Create/{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> AddLeave([FromRoute] string NationalId,
@@ -46,22 +62,7 @@ namespace Capstone.Features.LeaveModule
 
 			return Ok(result);
 		}
-		#endregion
 
-		#region==== Mobile ====
-		// GET: /Leaves/Check?NationalId=000000001&date=2023-04-19T10:37:16.914Z
-		[HttpGet("Check")]
-		[Authorize]
-		public async Task<IActionResult> CheckIsOnLeave([FromQuery] string NationalId, 
-			[FromQuery] DateTimeOffset date)
-		{
-			var result = await _service.CheckIfOnLeave(NationalId, date);
-
-			return Ok(new { IsOnLeave = result });
-		}
-		#endregion
-
-		#region==== DEBUG ====
 		[HttpDelete]
 		public async Task<IActionResult> DEBUG_DELETE()
 		{

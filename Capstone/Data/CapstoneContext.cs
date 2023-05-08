@@ -13,6 +13,7 @@ using Capstone.Features.PositionModule.Models;
 using Capstone.Features.Auth.Models;
 using Capstone.Features.LeaveModule.Models;
 using Capstone.Features.FeedbackModule.Models;
+using Capstone.Features.RequestModule.Models;
 
 namespace Capstone.Data
 {
@@ -30,6 +31,7 @@ namespace Capstone.Data
 		public DbSet<Attendance> Attendances { get; set; } = default!;
 		public DbSet<Leave> Leaves { get; set; } = default!;
 		public DbSet<Position> Positions { get; set; } = default!;
+		public DbSet<Request> Requests { get; set; } = default!;
 		public DbSet<Feedback> Feedbacks { get; set; } = default!;
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -96,6 +98,12 @@ namespace Capstone.Data
 				.HasOne(l => l.Employee)
 				.WithMany(e => e.Leaves)
 				.HasForeignKey(l => l.EmployeeId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			modelBuilder.Entity<Request>()
+				.HasOne(f => f.Employee)
+				.WithMany(e => e.Requests)
+				.HasForeignKey(f => f.EmployeeId)
 				.OnDelete(DeleteBehavior.Cascade);
 
 			modelBuilder.Entity<Feedback>()

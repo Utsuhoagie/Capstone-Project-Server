@@ -13,7 +13,7 @@ namespace Capstone.Features.LeaveModule
 		Task<PagedResult<LeaveResponse>> GetLeavesOfEmployee(PagingParams pagingParams, string NationalId);
 		Task<ServiceResult> AddLeave(string NationalId, LeaveRequest req);
 
-		Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset date);
+		Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset vnDate);
 
 		Task<bool> DEBUG_DELETE();
 	}
@@ -98,7 +98,7 @@ namespace Capstone.Features.LeaveModule
 		#endregion
 
 		#region==== Mobile ====
-		public async Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset date)
+		public async Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset vnDate)
 		{
 			var employee = await _context.People.OfType<Employee>()
 				.SingleOrDefaultAsync(e => e.NationalId == NationalId);
@@ -112,8 +112,8 @@ namespace Capstone.Features.LeaveModule
 				.Include(l => l.Employee)
 				.Where(l => l.Employee.NationalId == NationalId)
 				.AnyAsync(l =>
-					(l.StartDate.Date <= date.Date) &&
-					(l.EndDate.Date >= date.Date));
+					(l.StartDate.Date <= vnDate.Date) &&
+					(l.EndDate.Date >= vnDate.Date));
 
 			return isDateInAnyLeave;
 		}

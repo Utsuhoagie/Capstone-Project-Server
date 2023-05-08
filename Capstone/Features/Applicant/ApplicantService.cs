@@ -15,10 +15,10 @@ using System.Diagnostics;
 
 namespace Capstone.Features.ApplicantModule
 {
-	public interface IApplicantService
+    public interface IApplicantService
 	{
 		Task<PagedResult<ApplicantResponse>> GetAllApplicants();
-		Task<PagedResult<ApplicantResponse>> GetApplicants(PagingParams pagingParams, ApplicantFilterParams filterParams);
+		Task<PagedResult<ApplicantResponse>> GetApplicants(PagingParams pagingParams, ApplicantParams applicantParams);
 		Task<ApplicantResponse?> GetApplicant(string NationalId);
 		Task<ServiceResult> AddApplicant(ApplicantRequest req);
 		Task<ServiceResult> UpdateApplicant(string NationalId, ApplicantRequest req);
@@ -73,30 +73,40 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<PagedResult<ApplicantResponse>> GetApplicants(
 			PagingParams pagingParams,
-			ApplicantFilterParams filterParams)
+			ApplicantParams applicantParams)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
-			var SubName = filterParams.SubName;
-			var Gender = filterParams.Gender;
-			var Address = filterParams.Address;
-			var ExperienceYears = filterParams.ExperienceYears;
-			var AppliedPositionName = filterParams.AppliedPositionName;
-			var AppliedDateFrom = filterParams.AppliedDateFrom;
-			var AppliedDateTo = filterParams.AppliedDateTo;
-			var AskingSalary = filterParams.AskingSalary;
+			var NamePart = applicantParams.NamePart;
+			var Gender = applicantParams.Gender;
+			var Address = applicantParams.Address;
+			var AppliedPositionName = applicantParams.AppliedPositionName;
+
+			var ExperienceYearsFrom = applicantParams.ExperienceYearsFrom;
+			var ExperienceYearsTo = applicantParams.ExperienceYearsTo;
+			var AppliedDateFrom = applicantParams.AppliedDateFrom;
+			var AppliedDateTo = applicantParams.AppliedDateTo;
+			var AskingSalaryFrom = applicantParams.AskingSalaryFrom;
+			var AskingSalaryTo = applicantParams.AskingSalaryTo;
 
 			var queryableFilteredApplicantResponses = _context.People.OfType<Applicant>()
 				.Include(a => a.AppliedPosition)
-				.Where(a => SubName == null || a.FullName.ToLower().Contains(SubName.ToLower()))
+
+				.Where(a => NamePart == null || a.FullName.ToLower().Contains(NamePart.ToLower()))
 				.Where(a => Gender == null || a.Gender.ToLower().Equals(Gender.ToLower()))
 				.Where(a => Address == null || a.Address.ToLower().Contains(Address.ToLower()))
-				.Where(a => ExperienceYears == null || a.ExperienceYears == ExperienceYears)
 				.Where(a => AppliedPositionName == null || a.AppliedPosition.Name == AppliedPositionName)
-				.Where(a => ((AppliedDateFrom == null && AppliedDateTo == null) ||
-					(a.AppliedDate >= AppliedDateFrom && a.AppliedDate <= AppliedDateTo)))
-				.Where(a => AskingSalary == null || a.AskingSalary == AskingSalary)
+
+				.Where(a => ExperienceYearsFrom == null || a.ExperienceYears >= ExperienceYearsFrom)
+				.Where(a => ExperienceYearsTo == null || a.ExperienceYears <= ExperienceYearsTo)
+				
+				.Where(a => AppliedDateFrom == null || a.AppliedDate.Date >= AppliedDateFrom.Value.Date)
+				.Where(a => AppliedDateTo == null || a.AppliedDate.Date <= AppliedDateTo.Value.Date)
+				
+				.Where(a => AskingSalaryFrom == null || a.AskingSalary >= AskingSalaryFrom)
+				.Where(a => AskingSalaryTo == null || a.AskingSalary <= AskingSalaryTo)
+				
 				.Select(a => new ApplicantResponse
 				{
 					NationalId = a.NationalId,
@@ -346,12 +356,6 @@ namespace Capstone.Features.ApplicantModule
 			}
 
 			// Delete Applicant image/resume
-			var imageFilePathName_Applicant = Path.ChangeExtension(
-				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
-				"jpeg");
-			var resumeFilePathName_Applicant = Path.ChangeExtension(
-				Path.Combine(DANGEROUS_FILE_PATH, $"{req.NationalId}"),
-				"pdf");
 			if (applicant.ImageFileName != null)
 			{
 				File.Delete(Path.Combine(DANGEROUS_FILE_PATH, applicant.ImageFileName));

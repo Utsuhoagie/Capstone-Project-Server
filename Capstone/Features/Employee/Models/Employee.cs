@@ -3,6 +3,7 @@ using Capstone.Features.Auth.Models;
 using Capstone.Features.FeedbackModule.Models;
 using Capstone.Features.LeaveModule.Models;
 using Capstone.Features.PositionModule.Models;
+using Capstone.Features.RequestModule.Models;
 using Capstone.Models;
 
 namespace Capstone.Features.EmployeeModule.Models
@@ -16,6 +17,7 @@ namespace Capstone.Features.EmployeeModule.Models
         public Position Position { get; set; } = new Position();
 		public List<Leave> Leaves { get; set; } = new List<Leave>();
         public List<Attendance> Attendances { get; set; } = new List<Attendance>();
+		public List<Request> Requests { get; set; } = new List<Request>();
 		public List<Feedback> Feedbacks { get; set; } = new List<Feedback>();
         public EmployeeUser? User { get; set; }
     }

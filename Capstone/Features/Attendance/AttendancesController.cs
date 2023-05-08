@@ -42,16 +42,6 @@ namespace Capstone.Features.AttendanceModule
 			return Ok(monthAttendanceStatus);
 		}
 
-		[HttpGet("TestDate")]
-		public IActionResult TestDate(DateTime date, DateTimeOffset dateTimeOffset)
-		{
-			return Ok(new
-			{
-				date = date,
-				dateTimeOffset = dateTimeOffset,
-			});
-		}
-
 		// GET: api/Attendances/EmployeesNotOnLeave?page=1&pageSize=30&date=2023-04-07T02:04:29.000Z
 		[HttpGet("EmployeesNotOnLeave")]
 		[Authorize(Roles = AuthRoles.Admin)]
@@ -77,7 +67,8 @@ namespace Capstone.Features.AttendanceModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetAttendanceOfEmployee(string NationalId, DateTimeOffset date)
 		{
-			var result = await _service.GetAttendanceOfEmployee(NationalId, date);
+			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
+			var result = await _service.GetAttendanceOfEmployee(NationalId, vnDate);
 
 			if (result == null)
 			{
@@ -93,7 +84,7 @@ namespace Capstone.Features.AttendanceModule
 			[FromQuery] string type,
 			[FromQuery] DateTimeOffset date)
 		{
-			if (type != "Accept" || type != "Reject")
+			if (type != "Accept" && type != "Reject")
 			{
 				return BadRequest("Invalid type");
 			}

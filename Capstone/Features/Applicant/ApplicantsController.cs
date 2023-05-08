@@ -34,9 +34,8 @@ namespace Capstone.Features.ApplicantModule
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetApplicants(
-			int? page, int? pageSize,
-			string? SubName, string? Gender, string? Address, int? ExperienceYears,
-			string? AppliedPosition, DateTime? AppliedDateFrom, DateTimeOffset? AppliedDateTo, int? AskingSalary)
+			[FromQuery] int? page, [FromQuery] int? pageSize,
+			[FromQuery] ApplicantParams applicantParams)
 		{
 			if (page == null || pageSize == null)
 			{
@@ -49,20 +48,9 @@ namespace Capstone.Features.ApplicantModule
 			}
 
 			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
-			ApplicantFilterParams filterParams = new ApplicantFilterParams
-			{
-				SubName = SubName,
-				Gender = Gender,
-				Address = Address,
-				ExperienceYears = ExperienceYears,
-				AppliedPositionName = AppliedPosition,
-				AppliedDateFrom = AppliedDateFrom,
-				AppliedDateTo = AppliedDateTo,
-				AskingSalary = AskingSalary
-			};
 
 			var pagedApplicantResponses = await _service
-				.GetApplicants(pagingParams, filterParams);
+				.GetApplicants(pagingParams, applicantParams);
 
 			return Ok(pagedApplicantResponses);
 		}

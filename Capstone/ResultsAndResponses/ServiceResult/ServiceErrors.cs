@@ -19,6 +19,12 @@
 		public static readonly string AttendanceNotEndedError = "Đợt chấm công chưa kết thúc.";
 		public static readonly string AttendanceAlreadyStartedError = "Đợt chấm công đã bắt đầu.";
 		public static readonly string AttendanceAlreadyEndedError = "Đợt chấm công đã kết thúc.";
+		public static readonly string AttendanceAlreadyUpdatedError = "Đợt chấm công đã được kiểm tra.";
+		public static readonly string AttendanceAlreadyRejectedError = "Đợt chấm công đã bị từ chối.";
+		
+		public static readonly string NoRequestError = "Yêu cầu không tồn tại.";
+		public static readonly string NoNewSalaryError = "Yêu cầu không có mức lương mới.";
+		public static readonly string NoLeaveDateError = "Yêu cầu không có đầy đủ ngày bắt đầu/kết thúc nghỉ phép.";
 
 		public static readonly string EmployeeOnLeaveError = "Nhân viên đang nghỉ phép.";
 

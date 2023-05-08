@@ -15,10 +15,10 @@ using System.Configuration;
 
 namespace Capstone.Features.EmployeeModule
 {
-	public interface IEmployeeService
+    public interface IEmployeeService
 	{
 		Task<PagedResult<EmployeeResponse>> GetAllEmployees();
-		Task<PagedResult<EmployeeResponse>> GetEmployees(PagingParams pagingParams, EmployeeFilterParams filterParams);
+		Task<PagedResult<EmployeeResponse>> GetEmployees(PagingParams pagingParams, EmployeeParams employeeParams);
 		Task<EmployeeResponse?> GetEmployee(string NationalId);
 		Task<ServiceResult> AddEmployee(EmployeeRequest req);
 		Task<ServiceResult> UpdateEmployee(string NationalId, EmployeeRequest req);
@@ -76,31 +76,39 @@ namespace Capstone.Features.EmployeeModule
 
 		public async Task<PagedResult<EmployeeResponse>> GetEmployees(
 			PagingParams pagingParams,
-			EmployeeFilterParams filterParams)
+			EmployeeParams employeeParams)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
-			var SubName = filterParams.SubName;
-			var Gender = filterParams.Gender;
-			var Address = filterParams.Address;
-			var ExperienceYears = filterParams.ExperienceYears;
-			var PositionName = filterParams.PositionName;
-			var EmployedDateFrom = filterParams.EmployedDateFrom;
-			var EmployedDateTo = filterParams.EmployedDateTo;
-			var Salary = filterParams.Salary;
+			var NamePart = employeeParams.NamePart;
+			var Gender = employeeParams.Gender;
+			var Address = employeeParams.Address;
+			var PositionName = employeeParams.PositionName;
+			var ExperienceYearsFrom = employeeParams.ExperienceYearsFrom;
+			var ExperienceYearsTo = employeeParams.ExperienceYearsTo;
+			var EmployedDateFrom = employeeParams.EmployedDateFrom;
+			var EmployedDateTo = employeeParams.EmployedDateTo;
+			var SalaryFrom = employeeParams.SalaryFrom;
+			var SalaryTo = employeeParams.SalaryTo;
 
 			var queryableFilteredEmployeeDtos = _context.People.OfType<Employee>()
 				.Include(e => e.User)
 				.Include(e => e.Position)
-				.Where(e => SubName == null || e.FullName.ToLower().Contains(SubName.ToLower()))
+				.Where(e => NamePart == null || e.FullName.ToLower().Contains(NamePart.ToLower()))
 				.Where(e => Gender == null || e.Gender.ToLower().Equals(Gender.ToLower()))
 				.Where(e => Address == null || e.Address.ToLower().Contains(Address.ToLower()))
-				.Where(e => ExperienceYears == null || e.ExperienceYears == ExperienceYears)
 				.Where(e => PositionName == null || e.Position.Name == PositionName)
-				.Where(e => ((EmployedDateFrom == null && EmployedDateTo == null) ||
-					(e.EmployedDate >= EmployedDateFrom && e.EmployedDate <= EmployedDateTo)))
-				.Where(e => Salary == null || e.Salary == Salary)
+
+				.Where(e => ExperienceYearsFrom == null || e.ExperienceYears >= ExperienceYearsFrom)
+				.Where(e => ExperienceYearsTo == null || e.ExperienceYears <= ExperienceYearsTo)
+				
+				.Where(e => EmployedDateFrom == null || e.EmployedDate.Date >= EmployedDateFrom.Value.Date)
+				.Where(e => EmployedDateTo == null || e.EmployedDate.Date <= EmployedDateTo.Value.Date)
+
+				.Where(e => SalaryFrom == null || e.Salary >= SalaryFrom)
+				.Where(e => SalaryTo == null || e.Salary <= SalaryTo)
+
 				.Select(e => new EmployeeResponse
 				{
 					NationalId = e.NationalId,

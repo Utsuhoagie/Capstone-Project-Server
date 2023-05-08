@@ -14,7 +14,6 @@ using Capstone.Features.EmployeeModule.Models;
 using Microsoft.Net.Http.Headers;
 using System.Net.Http.Headers;
 using System.Net;
-using Capstone.Features.EmployeeModule.Models;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -36,9 +35,8 @@ namespace Capstone.Features.EmployeeModule
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetEmployees(
-			int? page, int? pageSize,
-			string? SubName, string? Gender, string? Address, int? ExperienceYears,
-			string? PositionName, DateTime? EmployedDateFrom, DateTimeOffset? EmployedDateTo, int? Salary)
+			[FromQuery] int? page, [FromQuery] int? pageSize,
+			[FromQuery] EmployeeParams employeeParams)
 		{
 			if (page == null || pageSize == null)
 			{
@@ -51,20 +49,11 @@ namespace Capstone.Features.EmployeeModule
 			}
 
 			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
-			EmployeeFilterParams filterParams = new EmployeeFilterParams
-			{
-				SubName = SubName,
-				Gender = Gender,
-				Address = Address,
-				ExperienceYears = ExperienceYears,
-				PositionName = PositionName,
-				EmployedDateFrom = EmployedDateFrom,
-				EmployedDateTo = EmployedDateTo,
-				Salary = Salary
-			};
+			employeeParams.EmployedDateFrom = employeeParams.EmployedDateFrom?.ToOffset(new TimeSpan(7,0,0));
+			employeeParams.EmployedDateTo = employeeParams.EmployedDateTo?.ToOffset(new TimeSpan(7,0,0));
 
 			var pagedEmployeeResponses = await _service
-				.GetEmployees(pagingParams, filterParams);
+				.GetEmployees(pagingParams, employeeParams);
 
 			return Ok(pagedEmployeeResponses);
 		}

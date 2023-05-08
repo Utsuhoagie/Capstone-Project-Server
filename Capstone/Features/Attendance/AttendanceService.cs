@@ -120,6 +120,7 @@ namespace Capstone.Features.AttendanceModule
 				var attendancesInDate = attendancesInMonth
 					.Where(a => a.StartTimestamp.Day == _day);
 				
+				// No Attendances today
 				if (attendancesInDate.Count() == 0)
 				{
 					var employeeResponsesNotOnLeaveOnDay = (await
@@ -345,13 +346,35 @@ namespace Capstone.Features.AttendanceModule
 				};
 			}
 
-			if (attendance.EndTimestamp == null)
+			if (attendance.AttendanceStatus != AttendanceStatus.Pending)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.AttendanceAlreadyUpdatedError,
+				};
+			}
+
+			var isAttendanceToday =
+				attendance.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0)).Date
+				== DateTimeOffset.Now.Date;
+			if (attendance.EndTimestamp == null &&
+				isAttendanceToday)
 			{
 				return new ServiceResult
 				{
 					Success = false,
 					ErrorMessage = ServiceErrors.AttendanceNotEndedError,
 				};
+			}
+
+			// Delete file
+			var startImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.StartImageFileName);
+			File.Delete(startImageFilePath);
+			if (attendance.EndImageFileName != null)
+			{
+				var endImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.EndImageFileName);
+				File.Delete(endImageFilePath);
 			}
 
 			attendance.AttendanceStatus = req.Status;
@@ -449,7 +472,7 @@ namespace Capstone.Features.AttendanceModule
 
 			// Upload file
 			var startImage = req.StartImage;
-			var startT = req.StartTimestamp;
+			var startT = req.StartTimestamp.ToOffset(new TimeSpan(7,0,0));
 			var safeFileNameTimestamp =
 				$"{startT.Day}-{startT.Month}-{startT.Year}_{startT.Hour}-{startT.Minute}";
 			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}_START";
@@ -540,10 +563,18 @@ namespace Capstone.Features.AttendanceModule
 					ErrorMessage = ServiceErrors.AttendanceAlreadyEndedError
 				};
 			}
+			if (attendance.AttendanceStatus == AttendanceStatus.Rejected)
+			{
+				return new ServiceResult
+				{
+					Success = false,
+					ErrorMessage = ServiceErrors.AttendanceAlreadyRejectedError
+				};
+			}
 
 			// Upload file
 			var endImage = req.EndImage;
-			var endT = req.EndTimestamp;
+			var endT = req.EndTimestamp.ToOffset(new TimeSpan(7,0,0));
 			//var safeFileName = Path.GetRandomFileName();
 			var safeFileNameTimestamp =
 				$"{endT.Day}-{endT.Month}-{endT.Year}_{endT.Hour}-{endT.Minute}";
