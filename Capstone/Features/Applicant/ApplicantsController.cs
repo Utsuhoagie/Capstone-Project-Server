@@ -48,6 +48,8 @@ namespace Capstone.Features.ApplicantModule
 			}
 
 			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
+			applicantParams.AppliedDateFrom = applicantParams.AppliedDateFrom?.ToOffset(new TimeSpan(7,0,0));
+			applicantParams.AppliedDateTo = applicantParams.AppliedDateTo?.ToOffset(new TimeSpan(7,0,0));
 
 			var pagedApplicantResponses = await _service
 				.GetApplicants(pagingParams, applicantParams);

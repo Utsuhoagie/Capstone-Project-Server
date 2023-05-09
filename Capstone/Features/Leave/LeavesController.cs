@@ -19,17 +19,11 @@ namespace Capstone.Features.LeaveModule
 		}
 
 		#region==== Web ====
-		[HttpGet]
+		[HttpGet("{NationalId}")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<IActionResult> GetLeavesOfEmployee(int page, int pageSize, string NationalId)
+		public async Task<IActionResult> GetLeavesOfEmployee([FromRoute] string NationalId)
 		{
-			PagingParams pagingParams = new PagingParams
-			{
-				Page = page,
-				PageSize = pageSize,
-			};
-
-			return Ok(await _service.GetLeavesOfEmployee(pagingParams, NationalId));
+			return Ok(await _service.GetLeavesOfEmployee(NationalId));
 		}
 		#endregion
 

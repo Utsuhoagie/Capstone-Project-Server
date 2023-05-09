@@ -213,6 +213,7 @@ namespace Capstone.Features.AttendanceModule
 				//
 				// means: at least 1 Leave of Employee is
 				.ToListAsync())
+				.Where(e => e.User != null)
 				.Where(e => e.EmployedDate.Date <= vnDate)
 				.Where(e => e.Leaves.Count == 0 || e.Leaves
 					.Any(l =>

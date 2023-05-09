@@ -10,7 +10,7 @@ namespace Capstone.Features.LeaveModule
 {
 	public interface ILeaveService
 	{
-		Task<PagedResult<LeaveResponse>> GetLeavesOfEmployee(PagingParams pagingParams, string NationalId);
+		Task<List<LeaveResponse>> GetLeavesOfEmployee(string NationalId);
 		Task<ServiceResult> AddLeave(string NationalId, LeaveRequest req);
 
 		Task<bool> CheckIfOnLeave(string NationalId, DateTimeOffset vnDate);
@@ -28,21 +28,8 @@ namespace Capstone.Features.LeaveModule
 		}
 
 		#region==== Web ====
-		public async Task<PagedResult<LeaveResponse>> GetLeavesOfEmployee(PagingParams pagingParams, 
-			string NationalId)
+		public async Task<List<LeaveResponse>> GetLeavesOfEmployee(string NationalId)
 		{
-			//var employee = await _context.People.OfType<Employee>()
-			//	.SingleOrDefaultAsync(e => e.NationalId == NationalId);
-
-			//if (employee == null)
-			//{
-			//	return new ServiceResult
-			//	{
-			//		Success = false,
-			//		ErrorMessage = ServiceErrors.NoEmployeeError,
-			//	};
-			//}
-
 			var leaveResponses = await _context.Leaves
 				.Include(l => l.Employee)
 				.Where(l => l.Employee.NationalId == NationalId)
@@ -54,7 +41,7 @@ namespace Capstone.Features.LeaveModule
 				})
 				.ToListAsync();
 
-			return new PagedResult<LeaveResponse>(leaveResponses, leaveResponses.Count, pagingParams);
+			return leaveResponses;
 		}
 
 		public async Task<ServiceResult> AddLeave(string NationalId, LeaveRequest req)
