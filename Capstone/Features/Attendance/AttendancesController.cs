@@ -78,20 +78,21 @@ namespace Capstone.Features.AttendanceModule
 			return Ok(result);
 		}
 
-		[HttpPut("BatchUpdatePreviousDaysOfMonth")]
+		[HttpPut("BatchUpdateStatuses")]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<IActionResult> BatchUpdatePreviousDaysOfMonth(
+		public async Task<IActionResult> BatchUpdateStatuses(
 			[FromQuery] string type,
+			[FromQuery] string dayOrMonth,
 			[FromQuery] DateTimeOffset date)
 		{
-			if (type != "Accept" && type != "Reject")
+			if ((type != "Accept" && type != "Reject") || (dayOrMonth != "day" && dayOrMonth != "month"))
 			{
-				return BadRequest("Invalid type");
+				return BadRequest("Hành động không hợp lệ.");
 			}
 
 			var vnDate = date.ToOffset(new TimeSpan(7, 0, 0));
 
-			var result = await _service.BatchUpdatePreviousDaysOfMonth(type, vnDate);
+			var result = await _service.BatchUpdateStatuses(type, dayOrMonth, vnDate);
 
 			if (!result.Success)
 			{

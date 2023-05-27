@@ -2,6 +2,7 @@
 using Capstone.Features.EmployeeModule;
 using Capstone.Features.FeedbackModule.Models;
 using Capstone.Responses.Pagination;
+using Capstone.ResultsAndResponses.SortParams;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,8 @@ namespace Capstone.Features.FeedbackModule
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetFeedbacks(
-			int page, int pageSize
+			[FromQuery] int page, [FromQuery] int pageSize,
+			[FromQuery] SortParams sortParams
 		)
 		{
 			if (page < 1 || pageSize < 1)
@@ -35,7 +37,7 @@ namespace Capstone.Features.FeedbackModule
 			PagingParams pagingParams = new PagingParams { Page = (int)page, PageSize = (int)pageSize };
 
 			var pagedFeedbackResponses = await _service
-				.GetFeedbacks(pagingParams);
+				.GetFeedbacks(pagingParams, sortParams);
 
 			return Ok(pagedFeedbackResponses);
 		}

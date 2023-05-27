@@ -1,19 +1,12 @@
 ﻿using Capstone.Data;
 using Capstone.Features.AttendanceModule.Models;
 using Capstone.Features.EmployeeModule.Models;
-using Capstone.Features.FileModule;
 using Capstone.Responses.Pagination;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Drawing.Drawing2D;
 using System.Security.Cryptography;
 using System.Text;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Capstone.Features.AttendanceModule
 {
@@ -24,7 +17,7 @@ namespace Capstone.Features.AttendanceModule
 		Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset vnDate);
 		Task<PagedResult<EmployeeResponse>> GetEmployeesNotOnLeave(PagingParams pagingParams, DateTimeOffset vnDate);
 		Task<AttendanceResponse?> GetAttendanceOfEmployee(string NationalId, DateTimeOffset vnDate);
-		Task<ServiceResult> BatchUpdatePreviousDaysOfMonth(string type, DateTimeOffset vnDate);
+		Task<ServiceResult> BatchUpdateStatuses(string type, string dayOrMonth, DateTimeOffset vnDate);
 		Task<ServiceResult> UpdateStatus(UpdateStatusRequest req);
 
 		// ==== Mobile ====
@@ -44,13 +37,13 @@ namespace Capstone.Features.AttendanceModule
 		Task<ServiceResult> DEBUG_DELETE();
 	}
 
-	public class AttendanceService: IAttendanceService
+	public class AttendanceService : IAttendanceService
 	{
 		private readonly CapstoneContext _context;
 		private readonly IConfiguration _configuration;
 		private readonly string DANGEROUS_FILE_PATH;
 
-		public AttendanceService(CapstoneContext context, IConfiguration configuration) 
+		public AttendanceService(CapstoneContext context, IConfiguration configuration)
 		{
 			_context = context;
 			_configuration = configuration;
@@ -71,7 +64,7 @@ namespace Capstone.Features.AttendanceModule
 
 			var sb = new StringBuilder();
 
-			foreach (var dailyHashByte in dailyHashBytes) 
+			foreach (var dailyHashByte in dailyHashBytes)
 			{
 				sb.Append(dailyHashByte.ToString("X2"));
 			}
@@ -79,7 +72,7 @@ namespace Capstone.Features.AttendanceModule
 			return sb.ToString();
 		}
 
-		
+
 		public async Task<List<DailyStatus>> GetDailyAttendanceStatusesOfMonth(DateTimeOffset vnDate)
 		{
 			var currentDate = DateTimeOffset.Now;
@@ -96,7 +89,7 @@ namespace Capstone.Features.AttendanceModule
 
 			var dailyStatusList = new List<DailyStatus>(
 				Enumerable.Repeat(DailyStatus.Empty, daysInMonth));
-			
+
 			for (int _day = 1; _day <= daysInMonth; _day++)
 			{
 				var dateInMonth = new DateTimeOffset(
@@ -118,8 +111,11 @@ namespace Capstone.Features.AttendanceModule
 				}
 
 				var attendancesInDate = attendancesInMonth
-					.Where(a => a.StartTimestamp.Day == _day);
-				
+					.Where(a =>
+						a.StartTimestamp
+							.ToOffset(new TimeSpan(7, 0, 0)).Day
+						== _day);
+
 				// No Attendances today
 				if (attendancesInDate.Count() == 0)
 				{
@@ -190,15 +186,15 @@ namespace Capstone.Features.AttendanceModule
 			//		var endDate = leave.EndDate.Date;
 			//	}
 			//}
-				// Only include Attendances where the Employee has no Leave
-				// means: at least 1 Leave of Employee is
-				// ---[Start...vnDate...End]---
-				//.Where(e => e.Leaves
-				//	.Any(l =>
-				//		(l.StartDate.Date <= vnDate) &&
-				//		(l.EndDate.Date >= vnDate)
-				//	)
-				//	|| e.Leaves.Count == 0);
+			// Only include Attendances where the Employee has no Leave
+			// means: at least 1 Leave of Employee is
+			// ---[Start...vnDate...End]---
+			//.Where(e => e.Leaves
+			//	.Any(l =>
+			//		(l.StartDate.Date <= vnDate) &&
+			//		(l.EndDate.Date >= vnDate)
+			//	)
+			//	|| e.Leaves.Count == 0);
 
 			var clievalEmployeeResponses = (await _context.People.OfType<Employee>()
 				.Include(e => e.Attendances)
@@ -282,12 +278,11 @@ namespace Capstone.Features.AttendanceModule
 
 			//}
 
-			var attendance = await _context.Attendances
+			var attendance = (await _context.Attendances
 				.Include(a => a.Employee)
-				.SingleOrDefaultAsync(a =>
-					(a.Employee.NationalId == NationalId) &&
-					(a.StartTimestamp.Date == vnDate.Date)
-				);
+				.Where(a => a.Employee.NationalId == NationalId)
+				.ToListAsync())
+				.SingleOrDefault(a => a.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0)).Date == vnDate.Date);
 
 			if (attendance == null)
 			{
@@ -304,26 +299,62 @@ namespace Capstone.Features.AttendanceModule
 				EmployeeFullName = attendance.Employee.FullName,
 				EmployeeNationalId = attendance.Employee.NationalId,
 			};
-			
+
 			return attendanceRes;
 		}
 
-		public async Task<ServiceResult> BatchUpdatePreviousDaysOfMonth(string type, DateTimeOffset vnDate)
+		/** 
+		 * type = 'Accept' | 'Reject'
+		 * dayOrMonth = 'day' | 'month'
+		 */
+		public async Task<ServiceResult> BatchUpdateStatuses(string type, string dayOrMonth, DateTimeOffset vnDate)
 		{
-			// type = 'Accept' || 'Reject'
+			var previousAttendancesOfMonth = (await _context.Attendances
+				.Where(a => a.AttendanceStatus == AttendanceStatus.Pending)
+				.ToListAsync())
+				.Where(a =>
+				{
+					if (dayOrMonth == "day")
+					{
+						return a.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0)).Date
+							== vnDate.Date;
+					}
+					else
+					{
+						return a.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0)).Date
+							<= vnDate.Date;
+					}
+				});
 
-			var previousAttendancesOfMonth = await _context.Attendances
-				.Where(a => a.StartTimestamp.Date < vnDate.Date)
-				.ToListAsync();
 
 			foreach (var attendance in previousAttendancesOfMonth)
 			{
+				// Attendance hasn't finished
+				if (attendance.EndTimestamp == null)
+				{
+					// Attendance is previous days
+					// automatically reject
+					if (attendance.StartTimestamp.Date < vnDate.Date)
+					{
+						attendance.AttendanceStatus = AttendanceStatus.Rejected;
+					}
+
+					// either today or previous days
+					// will both continue
+					// these don't change according to 'type'
+					continue;
+				}
+
+				// Attendance has finished here
+				// every Attendance is Pending, due to LINQ Where
 				var newAttendanceStatus =
 					type == "Accept" ? AttendanceStatus.Accepted :
 					type == "Reject" ? AttendanceStatus.Rejected :
 					attendance.AttendanceStatus;
 				attendance.AttendanceStatus = newAttendanceStatus;
 			}
+
+			await _context.SaveChangesAsync();
 
 			return new ServiceResult
 			{
@@ -370,13 +401,13 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			// Delete file
-			var startImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.StartImageFileName);
-			File.Delete(startImageFilePath);
-			if (attendance.EndImageFileName != null)
-			{
-				var endImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.EndImageFileName);
-				File.Delete(endImageFilePath);
-			}
+			//var startImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.StartImageFileName);
+			//File.Delete(startImageFilePath);
+			//if (attendance.EndImageFileName != null)
+			//{
+			//	var endImageFilePath = Path.Combine(DANGEROUS_FILE_PATH, attendance.EndImageFileName);
+			//	File.Delete(endImageFilePath);
+			//}
 
 			attendance.AttendanceStatus = req.Status;
 			await _context.SaveChangesAsync();
@@ -402,7 +433,7 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			var attendanceToday = employee.Attendances
-				.Where(a => a.StartTimestamp.Date == vnDate.Date)
+				.Where(a => a.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0)).Date == vnDate.Date)
 				.SingleOrDefault();
 
 			if (attendanceToday == null)
@@ -459,7 +490,7 @@ namespace Capstone.Features.AttendanceModule
 			// Check existing AttendanceModule
 			var existingAttendance = await _context.Attendances
 				.Include(a => a.Employee)
-				.FirstOrDefaultAsync(a => a.Employee.NationalId == req.EmployeeNationalId 
+				.FirstOrDefaultAsync(a => a.Employee.NationalId == req.EmployeeNationalId
 					&& a.StartTimestamp.Date == req.StartTimestamp.Date);
 
 			if (existingAttendance != null)
@@ -473,7 +504,7 @@ namespace Capstone.Features.AttendanceModule
 
 			// Upload file
 			var startImage = req.StartImage;
-			var startT = req.StartTimestamp.ToOffset(new TimeSpan(7,0,0));
+			var startT = req.StartTimestamp.ToOffset(new TimeSpan(7, 0, 0));
 			var safeFileNameTimestamp =
 				$"{startT.Day}-{startT.Month}-{startT.Year}_{startT.Hour}-{startT.Minute}";
 			var safeFileName = $"{safeFileNameTimestamp}_{employee.NationalId}_START";
@@ -575,7 +606,7 @@ namespace Capstone.Features.AttendanceModule
 
 			// Upload file
 			var endImage = req.EndImage;
-			var endT = req.EndTimestamp.ToOffset(new TimeSpan(7,0,0));
+			var endT = req.EndTimestamp.ToOffset(new TimeSpan(7, 0, 0));
 			//var safeFileName = Path.GetRandomFileName();
 			var safeFileNameTimestamp =
 				$"{endT.Day}-{endT.Month}-{endT.Year}_{endT.Hour}-{endT.Minute}";
@@ -590,6 +621,7 @@ namespace Capstone.Features.AttendanceModule
 			}
 
 			// Update attendance to include End fields
+			attendance.AttendanceStatus = isHashCorrect ? attendance.AttendanceStatus : AttendanceStatus.Rejected;
 			attendance.EndTimestamp = DateTimeOffset.UtcNow;
 			attendance.EndImageFileName = Path.GetFileName(safeFilePathNameWithCorrectExtension);
 

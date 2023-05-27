@@ -5,13 +5,14 @@ using Capstone.Features.PositionModule.Models;
 using Capstone.Responses.Pagination;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
+using Capstone.ResultsAndResponses.SortParams;
 using Microsoft.EntityFrameworkCore;
 
 namespace Capstone.Features.FeedbackModule
 {
 	public interface IFeedbackService
 	{
-		Task<PagedResult<FeedbackResponse>> GetFeedbacks(PagingParams pagingParams);
+		Task<PagedResult<FeedbackResponse>> GetFeedbacks(PagingParams pagingParams, SortParams sortParams);
 
 		Task<ServiceResult> AddFeedback(AddFeedbackRequest req);
 	}
@@ -25,7 +26,7 @@ namespace Capstone.Features.FeedbackModule
 		}
 		#region==== Web ====
 
-		public async Task<PagedResult<FeedbackResponse>> GetFeedbacks(PagingParams pagingParams)
+		public async Task<PagedResult<FeedbackResponse>> GetFeedbacks(PagingParams pagingParams, SortParams sortParams)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
@@ -40,12 +41,33 @@ namespace Capstone.Features.FeedbackModule
 					EmployeeFullName = f.Employee.FullName,
 				});
 
-			var pagedFeedbackResponses = await queryableFilteredFeedbackResponses
+			var sortedQueryableFilteredFeedbackResponses = 
+				sortParams.SortDirection == SortDirection.Ascending ?
+					(sortParams.SortByField) switch
+					{
+						"EmployeeFullName" => queryableFilteredFeedbackResponses
+							.OrderBy(e => e.EmployeeFullName),
+						"CreatedDate" => queryableFilteredFeedbackResponses
+							.OrderBy(e => e.CreatedDate),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: sortParams.SortDirection == SortDirection.Descending ?
+					(sortParams.SortByField) switch
+					{
+						"EmployeeFullName" => queryableFilteredFeedbackResponses
+							.OrderByDescending(e => e.EmployeeFullName),
+						"CreatedDate" => queryableFilteredFeedbackResponses
+							.OrderByDescending(e => e.CreatedDate),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: queryableFilteredFeedbackResponses;
+
+			var pagedFeedbackResponses = await sortedQueryableFilteredFeedbackResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			var totalCount = await queryableFilteredFeedbackResponses.CountAsync();
+			var totalCount = await sortedQueryableFilteredFeedbackResponses.CountAsync();
 
 			return new PagedResult<FeedbackResponse>(
 				items: pagedFeedbackResponses,

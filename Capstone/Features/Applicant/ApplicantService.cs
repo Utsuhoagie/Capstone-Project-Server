@@ -12,13 +12,14 @@ using Capstone.ResultsAndResponses.ServiceResult;
 using Capstone.Features.ApplicantModule.Models;
 using Capstone.Features.EmployeeModule.Models;
 using System.Diagnostics;
+using Capstone.ResultsAndResponses.SortParams;
 
 namespace Capstone.Features.ApplicantModule
 {
     public interface IApplicantService
 	{
 		Task<PagedResult<ApplicantResponse>> GetAllApplicants();
-		Task<PagedResult<ApplicantResponse>> GetApplicants(PagingParams pagingParams, ApplicantParams applicantParams);
+		Task<PagedResult<ApplicantResponse>> GetApplicants(PagingParams pagingParams, SortParams sortParams, ApplicantParams applicantParams);
 		Task<ApplicantResponse?> GetApplicant(string NationalId);
 		Task<ServiceResult> AddApplicant(ApplicantRequest req);
 		Task<ServiceResult> UpdateApplicant(string NationalId, ApplicantRequest req);
@@ -73,6 +74,7 @@ namespace Capstone.Features.ApplicantModule
 
 		public async Task<PagedResult<ApplicantResponse>> GetApplicants(
 			PagingParams pagingParams,
+			SortParams sortParams,
 			ApplicantParams applicantParams)
 		{
 			var page = pagingParams.Page;
@@ -124,12 +126,49 @@ namespace Capstone.Features.ApplicantModule
 					ResumeFileName = a.ResumeFileName,
 				});
 
-			var pagedApplicantResponses = await queryableFilteredApplicantResponses
+			var sortedQueryableFilteredApplicantResponses =
+				sortParams.SortDirection == SortDirection.Ascending ?
+					(sortParams.SortByField) switch
+					{
+						"FullName" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.FullName),
+						"BirthDate" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.BirthDate),
+						"ExperienceYears" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.ExperienceYears),
+						"AppliedPositionName" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.AppliedPositionName),
+						"AppliedDate" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.AppliedDate),
+						"AskingSalary" => queryableFilteredApplicantResponses
+							.OrderBy(e => e.AskingSalary),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: sortParams.SortDirection == SortDirection.Descending ?
+					(sortParams.SortByField) switch
+					{
+						"FullName" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.FullName),
+						"BirthDate" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.BirthDate),
+						"ExperienceYears" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.ExperienceYears),
+						"AppliedPositionName" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.AppliedPositionName),
+						"AppliedDate" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.AppliedDate),
+						"AskingSalary" => queryableFilteredApplicantResponses
+							.OrderByDescending(e => e.AskingSalary),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: queryableFilteredApplicantResponses;
+
+			var pagedApplicantResponses = await sortedQueryableFilteredApplicantResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			var totalCount = await queryableFilteredApplicantResponses.CountAsync();
+			var totalCount = await sortedQueryableFilteredApplicantResponses.CountAsync();
 
 			return new PagedResult<ApplicantResponse>(
 				items: pagedApplicantResponses,
@@ -306,7 +345,7 @@ namespace Capstone.Features.ApplicantModule
 			applicant.BirthDate = req.BirthDate;
 			applicant.Address = req.Address;
 			applicant.Phone = req.Phone;
-			applicant.Email = req.Email;
+			//applicant.Email = req.Email;
 			applicant.ExperienceYears = req.ExperienceYears;
 			applicant.AppliedPosition = newPosition;
 			applicant.AppliedDate = req.AppliedDate;

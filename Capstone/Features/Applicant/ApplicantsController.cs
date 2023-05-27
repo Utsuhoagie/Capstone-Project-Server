@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Capstone.Responses.Pagination;
 using Capstone.Features.ApplicantModule.Models;
 using Capstone.Features.EmployeeModule.Models;
+using Capstone.ResultsAndResponses.SortParams;
+using Capstone.ResultsAndResponses.ServiceResult;
 
 namespace Capstone.Features.ApplicantModule
 {
@@ -35,6 +37,7 @@ namespace Capstone.Features.ApplicantModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetApplicants(
 			[FromQuery] int? page, [FromQuery] int? pageSize,
+			[FromQuery] SortParams sortParams,
 			[FromQuery] ApplicantParams applicantParams)
 		{
 			if (page == null || pageSize == null)
@@ -52,7 +55,7 @@ namespace Capstone.Features.ApplicantModule
 			applicantParams.AppliedDateTo = applicantParams.AppliedDateTo?.ToOffset(new TimeSpan(7,0,0));
 
 			var pagedApplicantResponses = await _service
-				.GetApplicants(pagingParams, applicantParams);
+				.GetApplicants(pagingParams, sortParams, applicantParams);
 
 			return Ok(pagedApplicantResponses);
 		}
@@ -82,7 +85,7 @@ namespace Capstone.Features.ApplicantModule
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
             return CreatedAtAction(
@@ -102,14 +105,14 @@ namespace Capstone.Features.ApplicantModule
 		{
 			if (NationalId != applicantReq.NationalId)
 			{
-				return BadRequest();
+				return BadRequest(ServiceErrors.DuplicatePersonError);
 			}
 
 			var result = await _service.UpdateApplicant(NationalId, applicantReq);
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return NoContent();
@@ -149,7 +152,7 @@ namespace Capstone.Features.ApplicantModule
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return Ok();

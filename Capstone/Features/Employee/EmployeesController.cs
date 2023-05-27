@@ -14,6 +14,7 @@ using Capstone.Features.EmployeeModule.Models;
 using Microsoft.Net.Http.Headers;
 using System.Net.Http.Headers;
 using System.Net;
+using Capstone.ResultsAndResponses.SortParams;
 
 namespace Capstone.Features.EmployeeModule
 {
@@ -36,6 +37,7 @@ namespace Capstone.Features.EmployeeModule
 		[Authorize(Roles = AuthRoles.Admin)]
 		public async Task<IActionResult> GetEmployees(
 			[FromQuery] int? page, [FromQuery] int? pageSize,
+			[FromQuery] SortParams sortParams,
 			[FromQuery] EmployeeParams employeeParams)
 		{
 			if (page == null || pageSize == null)
@@ -53,7 +55,7 @@ namespace Capstone.Features.EmployeeModule
 			employeeParams.EmployedDateTo = employeeParams.EmployedDateTo?.ToOffset(new TimeSpan(7,0,0));
 
 			var pagedEmployeeResponses = await _service
-				.GetEmployees(pagingParams, employeeParams);
+				.GetEmployees(pagingParams, sortParams, employeeParams);
 
 			return Ok(pagedEmployeeResponses);
 		}
@@ -79,7 +81,12 @@ namespace Capstone.Features.EmployeeModule
 		[Consumes("multipart/form-data")]
 		public async Task<ActionResult<EmployeeRequest>> PostEmployee([FromForm] EmployeeRequest employeeReq)
 		{
-			await _service.AddEmployee(employeeReq);
+			var result = await _service.AddEmployee(employeeReq);
+
+			if (!result.Success)
+			{
+				return BadRequest(result.ErrorMessage);
+			}
 
             return CreatedAtAction(
 				actionName: "GetEmployee", 
@@ -107,14 +114,14 @@ namespace Capstone.Features.EmployeeModule
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return NoContent();
 		}
 
 		[HttpPut("UpdateSelf/{NationalId}")]
-		[Authorize(Roles = AuthRoles.Employee)]
+		[Authorize]
 		[Consumes("multipart/form-data")]
 		public async Task<IActionResult> UpdateSelf(
 			[FromRoute] string NationalId,

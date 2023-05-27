@@ -12,13 +12,14 @@ using Capstone.Features.EmployeeModule.Models;
 using Microsoft.AspNetCore.Identity;
 using Capstone.Features.Auth.Models;
 using System.Configuration;
+using Capstone.ResultsAndResponses.SortParams;
 
 namespace Capstone.Features.EmployeeModule
 {
     public interface IEmployeeService
 	{
 		Task<PagedResult<EmployeeResponse>> GetAllEmployees();
-		Task<PagedResult<EmployeeResponse>> GetEmployees(PagingParams pagingParams, EmployeeParams employeeParams);
+		Task<PagedResult<EmployeeResponse>> GetEmployees(PagingParams pagingParams, SortParams sortParams, EmployeeParams employeeParams);
 		Task<EmployeeResponse?> GetEmployee(string NationalId);
 		Task<ServiceResult> AddEmployee(EmployeeRequest req);
 		Task<ServiceResult> UpdateEmployee(string NationalId, EmployeeRequest req);
@@ -76,6 +77,7 @@ namespace Capstone.Features.EmployeeModule
 
 		public async Task<PagedResult<EmployeeResponse>> GetEmployees(
 			PagingParams pagingParams,
+			SortParams sortParams,
 			EmployeeParams employeeParams)
 		{
 			var page = pagingParams.Page;
@@ -92,7 +94,7 @@ namespace Capstone.Features.EmployeeModule
 			var SalaryFrom = employeeParams.SalaryFrom;
 			var SalaryTo = employeeParams.SalaryTo;
 
-			var queryableFilteredEmployeeDtos = _context.People.OfType<Employee>()
+			var queryableFilteredEmployeeResponses = _context.People.OfType<Employee>()
 				.Include(e => e.User)
 				.Include(e => e.Position)
 				.Where(e => NamePart == null || e.FullName.ToLower().Contains(NamePart.ToLower()))
@@ -127,15 +129,52 @@ namespace Capstone.Features.EmployeeModule
 					ResumeFileName = e.ResumeFileName,
 				});
 
-			var pagedEmployeeDtos = await queryableFilteredEmployeeDtos
+			var sortedQueryableFilteredEmployeeResponses =
+				sortParams.SortDirection == SortDirection.Ascending ?
+					(sortParams.SortByField) switch
+					{
+						"FullName" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.FullName),
+						"BirthDate" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.BirthDate),
+						"ExperienceYears" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.ExperienceYears),
+						"PositionName" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.PositionName),
+						"EmployedDate" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.EmployedDate),
+						"Salary" => queryableFilteredEmployeeResponses
+							.OrderBy(e => e.Salary),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: sortParams.SortDirection == SortDirection.Descending ?
+					(sortParams.SortByField) switch
+					{
+						"FullName" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.FullName),
+						"BirthDate" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.BirthDate),
+						"ExperienceYears" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.ExperienceYears),
+						"PositionName" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.PositionName),
+						"EmployedDate" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.EmployedDate),
+						"Salary" => queryableFilteredEmployeeResponses
+							.OrderByDescending(e => e.Salary),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: queryableFilteredEmployeeResponses;
+				
+			var pagedEmployeeResponses = await sortedQueryableFilteredEmployeeResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			var totalCount = await queryableFilteredEmployeeDtos.CountAsync();
+			var totalCount = await sortedQueryableFilteredEmployeeResponses.CountAsync();
 
 			return new PagedResult<EmployeeResponse>(
-				items: pagedEmployeeDtos,
+				items: pagedEmployeeResponses,
 				totalCount: totalCount,
 				page: page,
 				pageSize: pageSize);
@@ -308,7 +347,7 @@ namespace Capstone.Features.EmployeeModule
 			employee.BirthDate = req.BirthDate;
 			employee.Address = req.Address;
 			employee.Phone = req.Phone;
-			employee.Email = req.Email;
+			//employee.Email = req.Email;
 			employee.ExperienceYears = req.ExperienceYears;
 			employee.Position = position;
 			employee.Salary = req.Salary;

@@ -6,13 +6,14 @@ using Capstone.Features.RequestModule.Models;
 using Capstone.Responses.Pagination;
 using Capstone.Responses.ServiceResponse;
 using Capstone.ResultsAndResponses.ServiceResult;
+using Capstone.ResultsAndResponses.SortParams;
 using Microsoft.EntityFrameworkCore;
 
 namespace Capstone.Features.RequestModule
 {
 	public interface IRequestService
 	{
-		Task<PagedResult<RequestResponse>> GetRequests(PagingParams pagingParams);
+		Task<PagedResult<RequestResponse>> GetRequests(PagingParams pagingParams, RequestParams requestParams, SortParams sortParams);
 		Task<ServiceResult> UpdateRequestStatusRequest(UpdateRequestStatusRequest req);
 
 		Task<List<RequestResponse>> GetSelfRequests(string NationalId);
@@ -28,33 +29,69 @@ namespace Capstone.Features.RequestModule
 		}
 
 		#region==== Web ====
-		public async Task<PagedResult<RequestResponse>> GetRequests(PagingParams pagingParams)
+		public async Task<PagedResult<RequestResponse>> GetRequests(PagingParams pagingParams, RequestParams requestParams, SortParams sortParams)
 		{
 			var page = pagingParams.Page;
 			var pageSize = pagingParams.PageSize;
 
+			var Type = requestParams.Type;
+			var RequestStatus = requestParams.RequestStatus;
+
 			var queryableFilteredRequestResponses = _context.Requests
-				.Include(f => f.Employee)
-				.Select(f => new RequestResponse
+				.Include(r => r.Employee)
+				
+				.Where(r => Type == null || r.Type == Type)
+				.Where(r => RequestStatus == null || r.RequestStatus == RequestStatus)
+
+				.Select(r => new RequestResponse
 				{
-					Id = f.Id,
-					Title = f.Title,
-					Description = f.Description,
-					CreatedDate = f.CreatedDate,
-					Type = f.Type,
-					RequestStatus = f.RequestStatus,
-					NewSalary = f.NewSalary,
-					StartLeaveDate = f.StartLeaveDate,
-					EndLeaveDate = f.EndLeaveDate,
-					EmployeeFullName = f.Employee.FullName,
+					Id = r.Id,
+					Title = r.Title,
+					Description = r.Description,
+					CreatedDate = r.CreatedDate,
+					Type = r.Type,
+					RequestStatus = r.RequestStatus,
+					NewSalary = r.NewSalary,
+					StartLeaveDate = r.StartLeaveDate,
+					EndLeaveDate = r.EndLeaveDate,
+					EmployeeFullName = r.Employee.FullName,
 				});
 
-			var pagedRequestResponses = await queryableFilteredRequestResponses
+			var sortedQueryableFilteredRequestResponses = 
+				sortParams.SortDirection == SortDirection.Ascending ?
+					(sortParams.SortByField) switch
+					{
+						"EmployeeFullName" => queryableFilteredRequestResponses
+							.OrderBy(r => r.EmployeeFullName),
+						"Type" => queryableFilteredRequestResponses
+							.OrderBy(r => r.Type),
+						"RequestStatus" => queryableFilteredRequestResponses
+							.OrderBy(r => r.RequestStatus),
+						"CreatedDate" => queryableFilteredRequestResponses
+							.OrderBy(r => r.CreatedDate),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: sortParams.SortDirection == SortDirection.Descending ?
+					(sortParams.SortByField) switch
+					{
+						"EmployeeFullName" => queryableFilteredRequestResponses
+							.OrderByDescending(r => r.EmployeeFullName),
+						"Type" => queryableFilteredRequestResponses
+							.OrderByDescending(r => r.Type),
+						"RequestStatus" => queryableFilteredRequestResponses
+							.OrderByDescending(r => r.RequestStatus),
+						"CreatedDate" => queryableFilteredRequestResponses
+							.OrderByDescending(r => r.CreatedDate),
+						_ => throw new ArgumentOutOfRangeException(nameof(sortParams.SortByField)),
+					}
+				: queryableFilteredRequestResponses;
+
+			var pagedRequestResponses = await sortedQueryableFilteredRequestResponses
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			var totalCount = await queryableFilteredRequestResponses.CountAsync();
+			var totalCount = await sortedQueryableFilteredRequestResponses.CountAsync();
 
 			return new PagedResult<RequestResponse>(
 				items: pagedRequestResponses,

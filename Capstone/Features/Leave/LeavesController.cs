@@ -18,9 +18,9 @@ namespace Capstone.Features.LeaveModule
 			_service = service;
 		}
 
-		#region==== Web ====
+		#region==== Web & Mobile ====
 		[HttpGet("{NationalId}")]
-		[Authorize(Roles = AuthRoles.Admin)]
+		[Authorize]
 		public async Task<IActionResult> GetLeavesOfEmployee([FromRoute] string NationalId)
 		{
 			return Ok(await _service.GetLeavesOfEmployee(NationalId));
@@ -51,7 +51,7 @@ namespace Capstone.Features.LeaveModule
 
 			if (!result.Success)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return Ok(result);

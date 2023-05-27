@@ -76,7 +76,7 @@ namespace Capstone.Features.PositionModule
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
             return CreatedAtAction(
@@ -102,7 +102,7 @@ namespace Capstone.Features.PositionModule
 
 			if (result.Success == false)
 			{
-				return BadRequest(result);
+				return BadRequest(result.ErrorMessage);
 			}
 
 			return NoContent();

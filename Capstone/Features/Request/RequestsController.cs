@@ -1,6 +1,7 @@
 ﻿using Capstone.Features.Auth;
 using Capstone.Features.RequestModule.Models;
 using Capstone.Responses.Pagination;
+using Capstone.ResultsAndResponses.SortParams;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,11 +23,14 @@ namespace Capstone.Features.RequestModule
 		#region==== Web ====
 		[HttpGet]
 		[Authorize(Roles = AuthRoles.Admin)]
-		public async Task<IActionResult> GetRequests(int page, int pageSize)
+		public async Task<IActionResult> GetRequests(
+			[FromQuery] int page, [FromQuery] int pageSize,
+			[FromQuery] RequestParams requestParams,
+			[FromQuery] SortParams sortParams)
 		{
 			PagingParams pagingParams = new PagingParams { Page = page, PageSize = pageSize };
 
-			var requestResponses = await _service.GetRequests(pagingParams);
+			var requestResponses = await _service.GetRequests(pagingParams, requestParams, sortParams);
 
 			return Ok(requestResponses);
 		}
